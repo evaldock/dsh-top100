@@ -1,5 +1,13 @@
-import { describe, expect, it } from "vitest";
-import { extractRepoFromText, extractIntroByAuthor } from "../src/sources/issues.js";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { extractRepoFromText, extractIntroByAuthor, fetchSubmissionRepos, fetchPackSubmissionRepos, mergeSubmissionMetadata } from "../src/sources/issues.js";
+
+import { githubFetch, GithubError } from "../src/github.js";
+
+vi.mock("../src/github.js", async importOriginal => ({
+  ...await importOriginal<typeof import("../src/github.js")>(),
+  githubFetch: vi.fn(),
+}));
+beforeEach(() => vi.mocked(githubFetch).mockReset());
 
 describe("extractRepoFromText", () => {
   it("从 issue 正文提取仓库地址", () => {
@@ -76,5 +84,72 @@ describe("extractIntroByAuthor", () => {
 
   it("方括号为空回退裸写法", () => {
     expect(extractIntroByAuthor("作者自述：[] 实际在另一行")).toBe("[] 实际在另一行");
+  });
+});
+
+
+describe("submission migration", () => {
+  const issue = (number: number, body = "https://github.com/example/plugin", extra = {}) => ({
+    number, title: "[Submit] example/plugin", body, labels: [], state: "open", ...extra,
+  });
+  const ref = (repository: string, number: number) => ({
+    repository, number, url: `https://github.com/${repository}/issues/${number}`,
+  });
+
+  it("读取新仓库的无标签 #32，保留作者自述并排除自引用", async () => {
+    vi.mocked(githubFetch).mockResolvedValueOnce([issue(32,
+      "https://github.com/lemonxiny55/dsh-lint-loop\nhttps://github.com/evaldock/dsh-top100/issues/32\n**作者自述简介:** 零配置 lint 反馈闭环。")]).mockResolvedValueOnce([]);
+    expect(await fetchSubmissionRepos()).toEqual(new Map([["lemonxiny55/dsh-lint-loop", {
+      submissionIssues: [ref("evaldock/dsh-top100", 32)], introByAuthor: "零配置 lint 反馈闭环。",
+    }]]));
+    expect(githubFetch).toHaveBeenNthCalledWith(1, "/repos/evaldock/dsh-top100/issues?state=open&per_page=100&page=1");
+    expect(githubFetch).toHaveBeenNthCalledWith(2, "/repos/2BingLing/dsh-market/issues?state=open&per_page=100&page=1");
+  });
+
+  it("仅排除入口仓库，不排除同作者或组织的其他插件", () => {
+    expect(extractRepoFromText("https://github.com/2BingLing/dsh-market https://github.com/EvalDock/dsh-top100 "
+      + "https://github.com/2BingLing/plugin https://github.com/evaldock/plugin")).toEqual(["2bingling/plugin", "evaldock/plugin"]);
+  });
+
+  it("分页读取并保留新旧仓库同号提交，新仓库自述优先", async () => {
+    vi.mocked(githubFetch)
+      .mockResolvedValueOnce(Array.from({ length: 100 }, (_, i) => issue(i + 100, "", { title: "普通问题" })))
+      .mockResolvedValueOnce([issue(32, "https://github.com/example/plugin\n作者自述：新入口简介")])
+      .mockResolvedValueOnce([issue(32, "https://github.com/example/plugin\n作者自述：旧入口简介")]);
+    const repos = await fetchSubmissionRepos();
+    expect(repos.get("example/plugin")).toEqual({ submissionIssues: [ref("evaldock/dsh-top100", 32), ref("2BingLing/dsh-market", 32)], introByAuthor: "新入口简介" });
+    expect(githubFetch).toHaveBeenNthCalledWith(2, "/repos/evaldock/dsh-top100/issues?state=open&per_page=100&page=2");
+  });
+
+  it.each(["plugin", "pack"])("%s 通道区分整合包、插件、PR 和关闭的 issue", async kind => {
+    const issues = [issue(1), issue(2, "https://github.com/example/pack", { title: "[Submit pack] example/pack", labels: [{ name: "submission" }] }),
+      issue(3, "https://github.com/example/pull", { pull_request: {} }), issue(4, "https://github.com/example/closed", { state: "closed" }),
+      issue(5, "https://github.com/example/label", { title: "请收录", labels: [{ name: "submission" }] })];
+    vi.mocked(githubFetch).mockResolvedValueOnce(issues).mockResolvedValueOnce([]);
+    const repos = await (kind === "plugin" ? fetchSubmissionRepos() : fetchPackSubmissionRepos());
+    expect([...repos.keys()]).toEqual(kind === "plugin" ? ["example/plugin", "example/label"] : ["example/pack"]);
+    if (kind === "pack") expect(repos.get("example/pack")?.submissionIssues).toEqual([ref("evaldock/dsh-top100", 2)]);
+  });
+
+  it("某页失败后保留已读提交并继续旧仓库", async () => {
+    vi.mocked(githubFetch).mockResolvedValueOnce(Array.from({ length: 100 }, () => issue(32)))
+      .mockRejectedValueOnce(new Error("unavailable")).mockResolvedValueOnce([issue(40)]);
+    expect((await fetchSubmissionRepos()).get("example/plugin")?.submissionIssues)
+      .toEqual([ref("evaldock/dsh-top100", 32), ref("2BingLing/dsh-market", 40)]);
+  });
+
+  it("401 继续遵守全局终止语义", async () => {
+    vi.mocked(githubFetch).mockRejectedValueOnce(new GithubError("github-auth-invalid", 401, "https://api.github.com"));
+    await expect(fetchSubmissionRepos()).rejects.toMatchObject({ status: 401 });
+    expect(githubFetch).toHaveBeenCalledOnce();
+  });
+
+  it("搜索先加入候选后仍合并作者自述，按仓库和编号去重", () => {
+    const target: Parameters<typeof mergeSubmissionMetadata>[0] = {};
+    const metadata = { submissionIssues: [ref("evaldock/dsh-top100", 32)], introByAuthor: "作者自述" };
+    mergeSubmissionMetadata(target, metadata);
+    mergeSubmissionMetadata(target, metadata);
+    mergeSubmissionMetadata(target, { submissionIssues: [ref("2BingLing/dsh-market", 32)] });
+    expect(target).toEqual({ submissionIssues: [ref("evaldock/dsh-top100", 32), ref("2BingLing/dsh-market", 32)], introByAuthor: "作者自述" });
   });
 });

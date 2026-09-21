@@ -134,6 +134,12 @@ export interface GeneratedDescriptionVersion {
   source: Pick<DshPlugin, 'fullName' | 'type' | 'description' | 'readmeSummary' | 'install'>;
 }
 
+export interface SubmissionIssue {
+  repository: string;
+  number: number;
+  url: string;
+}
+
 export interface DshPlugin {
   /** Bounded history of source-bound model outputs, not human-reviewed prose. */
   descriptionHistory?: GeneratedDescriptionVersion[];
@@ -171,8 +177,10 @@ export interface DshPlugin {
   readmeSummary: string | null;
   /** 作者自述简介（插件提交时提供，可选；Web 详情页 C 位展示，区分于自动简介） */
   introByAuthor?: string;
-  /** 提交该插件的 issue 号（供详情页/安装区跳转讨论，可选） */
+  /** 首个提交 issue 的兼容编号；关联链接应使用 submissionIssues，不能推断仓库。 */
   submissionIssue?: number;
+  /** 提交来源及讨论链接，保留跨仓库同号 issue。 */
+  submissionIssues?: SubmissionIssue[];
   /** 安装相关信息 */
   install: InstallInfo;
   /** 实用五维评分 */

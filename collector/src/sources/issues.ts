@@ -4,10 +4,12 @@
  * 不关闭 issue、不评论（纯只读）；最终收录与否由特征检测决定。
  */
 
-import { githubFetch } from "../github.js";
+import type { SubmissionIssue } from "@dsh-top100/schema";
+import { githubFetch, GithubError } from "../github.js";
 
-/** 本仓库（提交插件 issue 所在） */
-const MARKET_REPO = "2BingLing/dsh-market";
+/** 迁移后的入口优先，旧仓库保留为历史提交来源。 */
+const SUBMISSION_REPOS = ["evaldock/dsh-top100", "2BingLing/dsh-market"] as const;
+const SELF_REPOS = new Set(SUBMISSION_REPOS.map(repo => repo.toLowerCase()));
 const SUBMISSION_LABEL = "submission";
 
 interface GithubIssue {
@@ -16,6 +18,7 @@ interface GithubIssue {
   body: string | null;
   state: string;
   labels?: Array<{ name?: string }>;
+  pull_request?: unknown;
 }
 
 /** 从 issue 正文提取 GitHub 仓库地址（兼容多种写法） */
@@ -28,10 +31,10 @@ export function extractRepoFromText(text: string): string[] {
     const owner = m[1].toLowerCase();
     const repo = m[2].toLowerCase().replace(/\.git$/, "");
     // 过滤明显非仓库路径（如 github.com 自身、market 仓库自己、GitHub 附件域）
-    if (owner === "github" || owner === "2bingling" || owner === "user-attachments") continue;
+    if (owner === "github" || owner === "user-attachments") continue;
     if (repo === "issues" || repo === "settings" || repo === "marketplace") continue;
     const fn = `${owner}/${repo}`;
-    if (!out.includes(fn)) out.push(fn);
+    if (!SELF_REPOS.has(fn) && !out.includes(fn)) out.push(fn);
   }
   return out;
 }
@@ -42,7 +45,7 @@ export function extractIntroByAuthor(body: string | null): string | undefined {
   if (!body) return undefined;
   // 1) 方括号形式（模板推荐写法，可多行）
   const braced = body.match(
-    /(?:作者自述|自定义简介|作者自述简介)\s*\*{0,2}\s*[：:]\s*\[([\s\S]*?)\]/m
+    /(?:作者自述|自定义简介|作者自述简介)\s*\*{0,2}\s*[：:]\*{0,2}\s*\[([\s\S]*?)\]/m
   );
   if (braced) {
     const text = braced[1].trim();
@@ -50,93 +53,77 @@ export function extractIntroByAuthor(body: string | null): string | undefined {
   }
   // 2) 裸写法（单行）
   const plain = body.match(
-    /(?:作者自述|自定义简介|作者自述简介)\s*\*{0,2}\s*[：:]\s*([^\n\r]+)/
+    /(?:作者自述|自定义简介|作者自述简介)\s*\*{0,2}\s*[：:]\*{0,2}\s*([^\n\r]+)/
   );
   const text = plain?.[1]?.trim();
   return text || undefined;
 }
 
-/** 提交插件 issue 的提取结果 */
+/** 提交插件 issue 的提取结果。仓库和编号一起标识 issue。 */
 export interface SubmissionMeta {
-  issueNumbers: number[];
-  /** 作者自述简介（可选） */
+  submissionIssues: SubmissionIssue[];
   introByAuthor?: string;
 }
 
-/** 读取本仓库所有 open 的提交插件 issue：返回 fullName(lower) → 元数据（issue 号 + 作者自述） */
+/** 搜索/周发现已经加入候选时，仍须合并提交来源和作者自述。 */
+export function mergeSubmissionMetadata(
+  target: Partial<SubmissionMeta>, source: Partial<SubmissionMeta>,
+): void {
+  if (source.submissionIssues?.length) {
+    const issues = [...(target.submissionIssues ?? [])];
+    for (const issue of source.submissionIssues) {
+      if (!issues.some(existing => existing.repository.toLowerCase() === issue.repository.toLowerCase()
+        && existing.number === issue.number)) issues.push(issue);
+    }
+    target.submissionIssues = issues;
+  }
+  target.introByAuthor ??= source.introByAuthor;
+}
+
 export async function fetchSubmissionRepos(): Promise<Map<string, SubmissionMeta>> {
-  return fetchSubmissionReposBy(/^\[提交插件\]|^\[submit/i, "submission", "issues:submission");
+  return fetchSubmissionReposBy("plugin");
 }
 
-/** 读取本仓库所有 open 的提交整合包 issue（[提交整合包] 标题）→ fullName(lower) → issue 号列表 */
-export async function fetchPackSubmissionRepos(): Promise<Map<string, number[]>> {
-  return fetchSubmissionReposByPack(/^\[提交整合包\]|^\[submit pack/i, "submission", "issues:pack-submission");
+export async function fetchPackSubmissionRepos(): Promise<Map<string, SubmissionMeta>> {
+  return fetchSubmissionReposBy("pack");
 }
 
-async function fetchSubmissionReposBy(
-  titleRe: RegExp,
-  label: string,
-  logTag: string
-): Promise<Map<string, SubmissionMeta>> {
+async function fetchSubmissionReposBy(kind: "plugin" | "pack"): Promise<Map<string, SubmissionMeta>> {
   const out = new Map<string, SubmissionMeta>();
-  try {
-    // label 过滤 + 标题前缀兜底（未打 label 的存量/模板失效 issue 也能命中）
-    const issues = await githubFetch<GithubIssue[]>(
-      `/repos/${MARKET_REPO}/issues?state=open&per_page=100`
-    );
-    let counted = 0;
-    for (const issue of issues) {
-      const isSubmission =
-        (issue.labels ?? []).some((l: { name?: string }) => l.name === label) ||
-        titleRe.test(issue.title);
-      if (!isSubmission) continue;
-      counted++;
-      const text = `${issue.title}\n${issue.body ?? ""}`;
-      const introByAuthor = extractIntroByAuthor(issue.body ?? null);
-      for (const fn of extractRepoFromText(text)) {
-        const meta = out.get(fn) ?? { issueNumbers: [] };
-        if (!meta.issueNumbers.includes(issue.number)) meta.issueNumbers.push(issue.number);
-        meta.introByAuthor = meta.introByAuthor ?? introByAuthor;
-        out.set(fn, meta);
+  let counted = 0;
+  for (const repository of SUBMISSION_REPOS) {
+    try {
+      for (let page = 1; ; page++) {
+        // 不按 label 查询：未打标签的标题提交同样有效。GitHub issues API 也返回 PR。
+        const issues = await githubFetch<GithubIssue[]>(
+          `/repos/${repository}/issues?state=open&per_page=100&page=${page}`
+        );
+        for (const issue of issues) {
+          if (issue.pull_request || issue.state !== "open") continue;
+          const isPack = /^\[(?:提交整合包|submit pack)\]/i.test(issue.title);
+          const isPlugin = /^\[(?:提交插件|submit(?: plugin)?)\]/i.test(issue.title);
+          const labelled = (issue.labels ?? []).some(label => label.name === SUBMISSION_LABEL);
+          if (kind === "pack" ? !isPack : isPack || !(isPlugin || labelled)) continue;
+          counted++;
+          const source: SubmissionMeta = {
+            submissionIssues: [{ repository, number: issue.number,
+              url: `https://github.com/${repository}/issues/${issue.number}` }],
+            introByAuthor: extractIntroByAuthor(issue.body),
+          };
+          for (const fullName of extractRepoFromText(`${issue.title}\n${issue.body ?? ""}`)) {
+            const meta = out.get(fullName) ?? { submissionIssues: [] };
+            mergeSubmissionMetadata(meta, source);
+            out.set(fullName, meta);
+          }
+        }
+        if (issues.length < 100) break;
       }
+    } catch (error) {
+      if (error instanceof GithubError && error.status === 401) throw error;
+      // 补充源失败不阻断其他仓库，保留此前已读取的分页。
+      console.warn(`  issues scan failed: ${repository}`);
     }
-    console.log(`  ${logTag} -> ${counted} issues, ${out.size} repos`);
-    return out;
-  } catch (err) {
-    // 失败不阻断主流程（issues 只是补充源）
-    console.warn(`  issues scan failed: ${(err as Error).message}`);
-    return out;
   }
-}
-
-async function fetchSubmissionReposByPack(
-  titleRe: RegExp,
-  label: string,
-  logTag: string
-): Promise<Map<string, number[]>> {
-  const out = new Map<string, number[]>();
-  try {
-    const issues = await githubFetch<GithubIssue[]>(
-      `/repos/${MARKET_REPO}/issues?state=open&per_page=100`
-    );
-    let counted = 0;
-    for (const issue of issues) {
-      const isSubmission =
-        (issue.labels ?? []).some((l: { name?: string }) => l.name === label) ||
-        titleRe.test(issue.title);
-      if (!isSubmission) continue;
-      counted++;
-      const text = `${issue.title}\n${issue.body ?? ""}`;
-      for (const fn of extractRepoFromText(text)) {
-        const list = out.get(fn) ?? [];
-        if (!list.includes(issue.number)) list.push(issue.number);
-        out.set(fn, list);
-      }
-    }
-    console.log(`  ${logTag} -> ${counted} issues, ${out.size} repos`);
-    return out;
-  } catch (err) {
-    console.warn(`  issues scan failed: ${(err as Error).message}`);
-    return out;
-  }
+  console.log(`  issues:${kind}-submission -> ${counted} issues, ${out.size} repos`);
+  return out;
 }

@@ -33,7 +33,7 @@ import { fetchRepositoryUpdates } from "./github-batch.js";
 import { fetchAwesomeEntries } from "./sources/awesome.js";
 import { scanOrg } from "./sources/github-search.js";
 import { discoverRepositories, type DiscoveryMode } from "./sources/discovery.js";
-import { fetchSubmissionRepos, fetchPackSubmissionRepos } from "./sources/issues.js";
+import { fetchSubmissionRepos, fetchPackSubmissionRepos, mergeSubmissionMetadata, type SubmissionMeta } from "./sources/issues.js";
 import { detectPlugin, detectNeedsConfig, DISCOVERY_POLICY_VERSION, ReviewedTargetValidationError, type Detection } from "./detect.js";
 import { reviewedPluginTargets, matchesReviewedTarget, quarantineUnreviewedTarget } from "./reviewed-targets.js";
 import { canRestorePrevious, restoredDiscovery, canReuseDetectionCache } from "./discovery-policy.js";
@@ -85,8 +85,8 @@ interface Candidate {
   sources: string[];
   awesomeName?: string;
   awesomeDescription?: string;
-  /** 提交插件 issue 号（issue-submission 来源；收录成功后自动回复用） */
-  issueNumbers?: number[];
+  /** 包含所属仓库的提交 issue，供关联和后续人工回复使用。 */
+  submissionIssues?: SubmissionMeta["submissionIssues"];
   /** 作者自述简介（提交 issue 时提供，可选；存到 plugin.introByAuthor） */
   introByAuthor?: string;
 }
@@ -185,7 +185,7 @@ async function main() {
   const orgRepos = await scanOrg();
 
   // 2.5 提交插件 issue（人工提交的仓库，并入候选池走相同检测流程）
-  // fullName(lower) -> issue 号列表（收录成功后用于自动回复）
+  // fullName(lower) -> 带仓库的 issue 关联与作者自述
   const issueRepos = await fetchSubmissionRepos();
 
   // 3. 合并去重
@@ -194,7 +194,7 @@ async function main() {
     fullName: string,
     repo: GithubRepo | null,
     source: string,
-    meta?: { name?: string; description?: string; issueNumbers?: number[]; introByAuthor?: string }
+    meta?: { name?: string; description?: string } & Partial<SubmissionMeta>
   ) => {
     const key = fullName.toLowerCase();
     if (EXCLUDED_REPOS.has(key)) return;
@@ -202,11 +202,7 @@ async function main() {
     if (existing) {
       if (!existing.sources.includes(source)) existing.sources.push(source);
       if (!existing.repo && repo) existing.repo = repo;
-      if (meta?.issueNumbers) {
-        existing.issueNumbers = [
-          ...new Set([...(existing.issueNumbers ?? []), ...meta.issueNumbers]),
-        ];
-      }
+      if (meta) mergeSubmissionMetadata(existing, meta);
       return;
     }
     candidates.set(key, {
@@ -215,7 +211,7 @@ async function main() {
       sources: [source],
       awesomeName: meta?.name,
       awesomeDescription: meta?.description,
-      issueNumbers: meta?.issueNumbers,
+      submissionIssues: meta?.submissionIssues,
       introByAuthor: meta?.introByAuthor,
     });
   };
@@ -231,7 +227,7 @@ async function main() {
   for (const r of orgRepos) addCandidate(r.full_name, r, "org");
   for (const [fn, meta] of issueRepos) {
     addCandidate(fn, null, "issue-submission", {
-      issueNumbers: meta.issueNumbers,
+      submissionIssues: meta.submissionIssues,
       introByAuthor: meta.introByAuthor,
     });
   }
@@ -425,7 +421,8 @@ async function main() {
         updatedAt: repo!.updated_at,
         readmeSummary,
         introByAuthor: candidate.introByAuthor,
-        submissionIssue: candidate.issueNumbers?.[0],
+        submissionIssue: candidate.submissionIssues?.[0]?.number,
+        submissionIssues: candidate.submissionIssues,
         install: {
           method: installMethod,
           discovery: {
@@ -885,27 +882,26 @@ async function main() {
     "utf-8"
   );
 
-  // 提交插件 issue 自动回复清单：收录成功的 issue-submission 来源插件
-  // workflow 的回复步骤读取本文件，对每个 issue 评论"已收录"并关闭
-  const issueReplies = detected
-    .filter((d) => d.candidate.issueNumbers?.length)
-    .map((d) => ({
-      issueNumbers: d.candidate.issueNumbers!,
+  // 只生成待回复清单，不发评论或关闭 issue。按仓库分组避免同号串仓库。
+  const issueReplies = detected.flatMap(d => {
+    const issues = d.candidate.submissionIssues ?? [];
+    return [...new Set(issues.map(issue => issue.repository))].map(repository => ({
+      repository,
+      issueNumbers: issues.filter(issue => issue.repository === repository).map(issue => issue.number),
+      issueUrls: issues.filter(issue => issue.repository === repository).map(issue => issue.url),
       fullName: d.plugin.fullName,
       type: d.plugin.type,
       stars: d.plugin.stars,
       score: d.plugin.score?.total ?? null,
     }));
-  if (issueReplies.length > 0) {
-    writeFileSync(
-      join(DATA_DIR, "issue-replies.json"),
-      JSON.stringify({ generatedAt: market.generatedAt, replies: issueReplies }, null, 2),
-      "utf-8"
-    );
-    console.log(`  issue-replies: ${issueReplies.length} 条（待 workflow 自动回复）`);
-  } else {
-    console.log("  issue-replies: 无（无待回复的 issue 收录）");
-  }
+  });
+  // 空结果也覆盖旧清单，避免把历史待回复记录误当成本轮结果。
+  writeFileSync(
+    join(DATA_DIR, "issue-replies.json"),
+    JSON.stringify({ generatedAt: market.generatedAt, replies: issueReplies }, null, 2),
+    "utf-8"
+  );
+  console.log(`  issue-replies: ${issueReplies.length} 条（待人工复核）`);
 
   console.log("[5/5] 完成");
   const top5 = [...market.plugins]
