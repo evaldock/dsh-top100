@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fetchRawFile, githubFetch, rejectPrivateRepository } from "../src/github.js";
+import { fetchRawFile, githubFetch, rejectPrivateRepository, isGithubAuthenticationFailure } from "../src/github.js";
+import { assertGithubAccess } from '../src/github-auth.js';
 import { canRestorePrevious } from "../src/discovery-policy.js";
 
 afterEach(() => {
@@ -64,6 +65,40 @@ describe("public catalog visibility boundary", () => {
 });
 
 describe("GitHub authentication", () => {
+  it('stops before discovery when no credential is configured', async () => {
+    delete process.env.GITHUB_TOKEN;
+    const request = vi.fn(); vi.stubGlobal('fetch', request);
+    await expect(assertGithubAccess()).rejects.toMatchObject({ code: 'github-auth-missing' });
+    expect(request).not.toHaveBeenCalled();
+  });
+  it('latches a 401 for this credential and never logs provider bodies', async () => {
+    process.env.GITHUB_TOKEN = 'invalid-fixture-only';
+    const request = vi.fn(async () => new Response('sensitive provider response', { status: 401 }));
+    vi.stubGlobal('fetch', request);
+    await expect(assertGithubAccess()).rejects.toMatchObject({ code: 'github-auth-invalid' });
+    await expect(githubFetch('/repos/example/public')).rejects.toThrow('github-auth-invalid');
+    await expect(fetchRawFile('example/public', 'README.md')).rejects.toThrow('github-auth-invalid');
+    expect(request).toHaveBeenCalledOnce();
+    try { await githubFetch('/user'); } catch (error) {
+      expect(isGithubAuthenticationFailure(new Error('wrapper', { cause: error }))).toBe(true);
+      expect(JSON.stringify(error)).not.toContain('sensitive');
+      expect(JSON.stringify(error)).not.toContain(process.env.GITHUB_TOKEN);
+    }
+  });
+  it('uses the replacement credential and validates GraphQL before dispatch', async () => {
+    process.env.GITHUB_TOKEN = 'replacement-fixture-only';
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ data: {
+      viewer: { login: 'fixture-owner' }, rateLimit: { remaining: 4000 },
+    } }))));
+    await expect(assertGithubAccess()).resolves.toBeUndefined();
+  });
+  it('does not confuse rate limits or GraphQL permission errors with an invalid token', async () => {
+    process.env.GITHUB_TOKEN = 'limited-fixture-only';
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('', { status: 403 })));
+    await expect(assertGithubAccess()).rejects.toMatchObject({ code: 'github-preflight-unavailable' });
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ errors: [{ message: 'private details' }] }))));
+    await expect(assertGithubAccess()).rejects.toMatchObject({ code: 'github-permission-denied' });
+  });
   it("reads GITHUB_TOKEN when the request runs instead of at module load", async () => {
     const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
       const headers = init?.headers as Record<string, string>;

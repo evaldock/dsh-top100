@@ -1,7 +1,7 @@
 /** Config-driven candidate discovery across GitHub Repository Search, Code Search, and npm. */
 
 import discoveryConfig from "../../config/discovery-sources.json";
-import type { GithubRepo } from "../github.js";
+import { isGithubAuthenticationFailure, type GithubRepo } from "../github.js";
 import {
   partitionedRepositorySearch,
   requestGithubRepositories,
@@ -188,6 +188,7 @@ export async function discoverRepositories(
         `  ${sourceId} -> ${result.repositories.length} repos, ${result.audit.shards} shards`
       );
     } catch (error) {
+      if (isGithubAuthenticationFailure(error)) throw error;
       const partial = error instanceof SearchPartialError
         ? error.partial as PartitionedSearchResult | undefined
         : undefined;
@@ -232,6 +233,7 @@ export async function discoverRepositories(
         `  ${sourceId} -> ${result.repositories.length} repos from ${result.matches}/${result.totalMatches} matches${result.complete ? "" : " (partial)"}`
       );
     } catch (error) {
+      if (isGithubAuthenticationFailure(error)) throw error;
       const partial = error instanceof SearchPartialError
         ? error.partial as CodeSearchResult | undefined
         : undefined;

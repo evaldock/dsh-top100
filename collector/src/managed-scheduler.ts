@@ -4,15 +4,20 @@ import { spawn } from 'node:child_process';
 import { fstatSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { advanceOperation, atomicOperationJson, dailyOperationDue, loadOperation, localDay, operationPath, type Stage } from './operation-state.js';
+import { advanceOperation, atomicOperationJson, dailyOperationDue, loadOperation, localDay, operationPath, readOperationJson } from './operation-state.js';
 import { auditPublication } from './operation-audit.js';
 import { assessDiskSpace } from './disk-space.js';
 import { observeDisk } from './disk-observation.js';
+import { checkGithubPreflight, recordGithubAuthFailure } from './github-preflight.js';
+import { OperationError } from './operation-errors.js';
+import { operationCommand, weeklyDiscoveryDue, type CommandStage } from './operation-command.js';
+import { readWeeklyDiscoveryStatus } from './weekly-discovery.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const runtime = dirname(resolve(root, process.env.DATABASE_PATH ?? 'runtime/dsh-top100.sqlite'));
 const operations = join(runtime, 'operations');
 const publicDirectory = resolve(root, process.env.PUBLIC_DATA_DIR ?? 'runtime/public-data');
+const dataDirectory = resolve(root, 'data');
 const timeZone = process.env.TZ ?? 'Asia/Shanghai';
 const hour = Number(process.env.COLLECT_HOUR ?? '6');
 const fullWeekday = Number(process.env.FULL_DISCOVERY_WEEKDAY ?? '0');
@@ -29,8 +34,8 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) process.on(signal, () => {
   setTimeout(() => { stopGroup('SIGKILL'); process.exit(1); }, 10_000).unref();
   if (!running) process.exit(0);
 });
-function command(stage: Exclude<Stage, 'verify'>, date: string): Promise<void> {
-  const weekday = new Date(`${date}T12:00:00Z`).getUTCDay();
+function command(stage: CommandStage, date: string): Promise<void> {
+  const plan = operationCommand(stage, date);
   return new Promise((ok, fail) => {
     const disk = observeDisk(runtime), runId = Date.now();
     const finishDisk = () => {
@@ -38,12 +43,11 @@ function command(stage: Exclude<Stage, 'verify'>, date: string): Promise<void> {
       try { atomicOperationJson(join(operations, 'disk-usage', `${date}-${stage}-${runId}.json`), { ...report, stage, date }); }
       catch { console.error('[scheduler] disk-observation-write-failed'); }
     };
-    const processChild = spawn('npm', ['run', stage === 'collect' ? 'collect' : 'db:sync'], {
+    const processChild = spawn(plan.executable, plan.args, {
       cwd: root, detached: true,
       // Retain the shared flock in the phase tree even if the scheduler is killed.
       stdio: ['ignore', 'inherit', 'inherit', 'ignore', 'ignore', 'ignore', 'ignore', 'ignore', 'ignore', 9],
-      env: { ...process.env, DSH_DAILY_UPDATE: '1', DSH_OPERATION_DATE: date,
-        DSH_DISCOVERY_MODE: weekday === fullWeekday ? 'full' : 'incremental' },
+      env: { ...process.env, ...plan.env },
     });
     child = processChild;
     let timedOut = false;
@@ -52,9 +56,15 @@ function command(stage: Exclude<Stage, 'verify'>, date: string): Promise<void> {
       timedOut = true; stopGroup('SIGTERM');
       killTimer = setTimeout(() => { if (processChild.pid) try { process.kill(-processChild.pid, 'SIGKILL'); } catch { /* exited */ } }, 10_000);
       killTimer.unref();
-    }, 90 * 60_000);
+    }, plan.timeoutMs);
     processChild.once('error', () => { clearTimeout(timeout); finishDisk(); child = undefined; fail(new Error('phase-start-failed')); });
-    processChild.once('exit', code => { clearTimeout(timeout); if (killTimer) clearTimeout(killTimer); finishDisk(); child = undefined; code === 0 && !timedOut ? ok() : fail(new Error('phase-failed')); });
+    processChild.once('exit', code => {
+      // npm can exit before its descendants; retain timeout escalation for the process group.
+      clearTimeout(timeout); finishDisk(); child = undefined;
+      if (code === 78) { recordGithubAuthFailure(operations); fail(new OperationError('github-auth-required')); }
+      else if (timedOut) fail(new OperationError(`${stage}-timeout`));
+      else code === 0 ? ok() : fail(new Error('phase-failed'));
+    });
   });
 }
 async function tick() {
@@ -64,20 +74,23 @@ async function tick() {
   running = true;
   try {
     const state = loadOperation(operations, today.date, now);
+    const diskReady = (stage: CommandStage): boolean => {
+      try {
+        const report = assessDiskSpace({ databasePath: resolve(root, process.env.DATABASE_PATH ?? 'runtime/dsh-top100.sqlite'),
+          sourcePath: resolve(root, process.env.SOURCE_DATA_PATH ?? 'data/plugins.json'), publicDirectory });
+        atomicOperationJson(join(operations, 'disk-preflight.json'), { ...report, stage, date: today.date });
+        return report.status === 'ready';
+      } catch {
+        atomicOperationJson(join(operations, 'disk-preflight.json'), { schemaVersion: 1, checkedAt: new Date().toISOString(),
+          status: 'unknown', code: 'disk-check-failed', stage, date: today.date });
+        return false;
+      }
+    };
     await advanceOperation(state, { now: Date.now, timeZone,
       persist: state => atomicOperationJson(operationPath(operations, state.date), state),
-      beforeStage: stage => {
+      beforeStage: async stage => {
         if (stage === 'verify') return true;
-        try {
-          const report = assessDiskSpace({ databasePath: resolve(root, process.env.DATABASE_PATH ?? 'runtime/dsh-top100.sqlite'),
-            sourcePath: resolve(root, process.env.SOURCE_DATA_PATH ?? 'data/plugins.json'), publicDirectory });
-          atomicOperationJson(join(operations, 'disk-preflight.json'), { ...report, stage, date: today.date });
-          return report.status === 'ready';
-        } catch {
-          atomicOperationJson(join(operations, 'disk-preflight.json'), { schemaVersion: 1, checkedAt: new Date().toISOString(),
-            status: 'unknown', code: 'disk-check-failed', stage, date: today.date });
-          return false;
-        }
+        return diskReady(stage) && (stage !== 'collect' || await checkGithubPreflight(operations));
       },
       execute: async stage => {
         if (stopping) throw new Error('scheduler-stopping');
@@ -92,6 +105,25 @@ async function tick() {
         return { snapshotId: audit.snapshotId };
       },
     });
+    // Discovery owns no daily stage, so its interruption cannot undo a published day.
+    const slicePath = join(operations, 'weekly-discovery-slice.json');
+    const previousSlice = readOperationJson<{ date: string }>(slicePath);
+    const sweep = await readWeeklyDiscoveryStatus(dataDirectory);
+    if (!stopping && localDay(Date.now(), timeZone).date === today.date
+      && weeklyDiscoveryDue({ date: today.date, fullWeekday, dailyVerified: state.stages.verify.status === 'complete',
+        lastSliceDate: previousSlice?.date, sweep: sweep ?? undefined, timeZone })
+      && diskReady('discovery') && await checkGithubPreflight(operations)) {
+      const startedAt = new Date().toISOString();
+      // Persist before dispatch: a crash/restart must not launch repeated slices today.
+      atomicOperationJson(slicePath, { date: today.date, startedAt, status: 'running' });
+      try {
+        await command('discovery', today.date);
+        atomicOperationJson(slicePath, { date: today.date, startedAt, finishedAt: new Date().toISOString(), status: 'finished' });
+      } catch (error) {
+        atomicOperationJson(slicePath, { date: today.date, startedAt, finishedAt: new Date().toISOString(), status: 'interrupted',
+          code: error instanceof OperationError ? error.code : 'discovery-failed' });
+      }
+    }
   } catch { atomicOperationJson(join(operations, 'scheduler-error.json'), { code: 'scheduler-state-failed', at: new Date().toISOString() }); }
   finally { running = false; if (stopping) process.exit(0); }
 }

@@ -1,6 +1,7 @@
 /** Durable daily progress. Only the scheduler holding the OS lock may write it. */
 import { closeSync, fsyncSync, mkdirSync, openSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { OperationError } from './operation-errors.js';
 
 export const stages = ['collect', 'publish', 'verify'] as const;
 export type Stage = typeof stages[number];
@@ -97,9 +98,9 @@ export async function advanceOperation(state: DailyOperation, options: {
       const result = await options.execute(stage);
       if (result?.snapshotId) state.snapshotId = result.snapshotId;
       progress.status = 'complete'; progress.finishedAt = new Date(options.now()).toISOString();
-    } catch {
+    } catch (error) {
       // Never persist provider messages, command text, URLs or credentials.
-      failStage(state, stage, options.now(), `${stage}-failed`);
+      failStage(state, stage, options.now(), error instanceof OperationError ? error.code : `${stage}-failed`);
       state.updatedAt = new Date(options.now()).toISOString(); options.persist(state); return;
     }
     state.updatedAt = new Date(options.now()).toISOString(); options.persist(state);

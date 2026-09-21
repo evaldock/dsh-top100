@@ -18,4 +18,14 @@ describe('collection concurrency configuration', () => {
     expect(maximum).toBe(3);
     expect(completed.sort((a, b) => a - b)).toEqual(Array.from({length: 12}, (_, n) => n));
   });
+  it('stops assigning work on a fatal error and drains workers before rejecting', async () => {
+    const started: number[] = [], finished: number[] = [];
+    const fatal = new Error('authentication failed');
+    await expect(runPool([0, 1, 2, 3, 4], async item => {
+      started.push(item);
+      if (item === 0) throw fatal;
+      await new Promise(resolve => setTimeout(resolve, 2)); finished.push(item);
+    }, 2, error => error === fatal)).rejects.toBe(fatal);
+    expect(started).toEqual([0, 1]); expect(finished).toEqual([1]);
+  });
 });

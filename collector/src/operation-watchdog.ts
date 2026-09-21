@@ -8,6 +8,8 @@ import { reconcileIncidents, type IncidentState } from './operation-incidents.js
 import { modelPolicyHealth } from './model-requests.js';
 import { loadSourceRecovery } from './source-recovery.js';
 import { assessDiskSpace } from './disk-space.js';
+import type { GithubPreflight } from './github-preflight.js';
+import { readWeeklyDiscoveryStatus } from './weekly-discovery.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const runtime = dirname(resolve(root, process.env.DATABASE_PATH ?? 'runtime/dsh-top100.sqlite'));
@@ -23,6 +25,16 @@ async function tick() {
   const now = Date.now(), today = localDay(now, timeZone), at = new Date(now).toISOString();
   try {
     const issues: OperationIssue[] = [];
+    const github = readOperationJson<GithubPreflight>(join(directory, 'github-preflight.json'));
+    if (github?.status === 'blocked') issues.push({ key: 'github-access', severity: 'critical', code: github.code ?? 'github-preflight-unavailable' });
+    let weekly;
+    try {
+      const checkpoint = await readWeeklyDiscoveryStatus(resolve(root, 'data'));
+      const slice = readOperationJson<{ date: string; status: string }>(join(directory, 'weekly-discovery-slice.json'));
+      weekly = { sweep: checkpoint ? { startedAt: checkpoint.startedAt, completedAt: checkpoint.completedAt,
+        status: checkpoint.status, audit: checkpoint.audit } : null, slice };
+      if (slice?.status === 'interrupted') issues.push({ key: 'weekly-discovery', severity: 'warning', code: 'weekly-discovery-interrupted' });
+    } catch { issues.push({ key: 'weekly-discovery', severity: 'warning', code: 'weekly-discovery-state-unreadable' }); }
     let disk;
     try {
       disk = assessDiskSpace({ databasePath: resolve(root, process.env.DATABASE_PATH ?? 'runtime/dsh-top100.sqlite'),
@@ -98,7 +110,7 @@ async function tick() {
     const activeIssues = Object.values(result.state.incidents).filter(incident => !incident.resolvedAt);
     atomicOperationJson(join(directory, 'status.json'), { schemaVersion: 1, checkedAt: at,
       status: activeIssues.some(issue => issue.severity === 'critical') ? 'action-required' : activeIssues.some(issue => issue.severity === 'warning') ? 'degraded' : 'healthy',
-      notification: { destination: 'geo', connected: false }, operation, publication: audit, budget, disk, issues: activeIssues });
+      notification: { destination: 'geo', connected: false }, operation, publication: audit, budget, disk, github, weekly, issues: activeIssues });
     atomicOperationJson(join(directory, 'watchdog-heartbeat.json'), { at });
   } catch { console.error('[watchdog] observation-failed'); }
   finally { running = false; }

@@ -5,7 +5,38 @@
  * - 返回 typed 数据
  */
 
+import { createHash } from 'node:crypto';
+import { GithubRateLimitGate, githubResource } from './github-rate-limit.js';
+
 const API_BASE = "https://api.github.com";
+let rateLimitCredential: string | undefined;
+let rateLimitGate = new GithubRateLimitGate();
+function currentRateLimitGate(): GithubRateLimitGate {
+  const fingerprint = createHash('sha256').update(process.env.GITHUB_TOKEN ?? '').digest('hex');
+  if (fingerprint !== rateLimitCredential) {
+    rateLimitCredential = fingerprint;
+    rateLimitGate = new GithubRateLimitGate();
+  }
+  return rateLimitGate;
+}
+
+// A revoked credential is a run-wide failure, never a missing repository/file.
+// The credential is compared only in memory; neither it nor provider bodies are logged.
+let rejectedCredential: string | undefined;
+export function assertGithubAuthenticationHealthy(): void {
+  if (rejectedCredential && rejectedCredential === process.env.GITHUB_TOKEN) {
+    throw new GithubError('github-auth-invalid', 401, API_BASE);
+  }
+}
+export function isGithubAuthenticationFailure(error: unknown): boolean {
+  const seen = new Set<unknown>();
+  while (error && typeof error === 'object' && !seen.has(error)) {
+    seen.add(error);
+    if (error instanceof GithubError && error.status === 401) return true;
+    error = (error as { cause?: unknown }).cause;
+  }
+  return false;
+}
 
 export class GithubError extends Error {
   constructor(
@@ -70,11 +101,19 @@ export async function githubFetch<T>(
   opts: RequestOptions = {},
   maxRetries = 3
 ): Promise<T> {
+  assertGithubAuthenticationHealthy();
   const url = path.startsWith("http") ? path : `${API_BASE}${path}`;
+  const limits = currentRateLimitGate();
+  const resource = githubResource(url);
+  // Scheduler probes must return promptly so its persisted retry policy stays in control.
+  if (maxRetries === 1 && limits.retryAt(resource) > Date.now()) {
+    throw new GithubError('github-rate-limited', 429, API_BASE);
+  }
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
+      await limits.wait(resource, assertGithubAuthenticationHealthy);
       const headers: Record<string, string> = {
         "User-Agent": "dsh-market-collector",
         Accept: opts.accept ?? "application/vnd.github+json",
@@ -90,26 +129,18 @@ export async function githubFetch<T>(
         body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
       });
 
-      if (res.status === 403 || res.status === 429) {
-        // GitHub 限流两种形式：
-        // 1) 主限流：x-ratelimit-reset（时间戳）
-        // 2) secondary rate limit：Retry-After（秒）——403 无 x-ratelimit-reset 时常见
-        const retryAfter = res.headers.get("retry-after");
-        const reset = res.headers.get("x-ratelimit-reset");
-        let waitMs = 0;
-        if (retryAfter) {
-          waitMs = Number(retryAfter) * 1000 + 500;
-        } else if (reset) {
-          waitMs = Math.min(Number(reset) * 1000 - Date.now() + 1000, 60_000);
-        } else if (res.status === 429) {
-          waitMs = 5000; // 429 无 header：保守等待后重试
-        }
-        if (waitMs > 0) {
-          await sleep(Math.min(waitMs, 60_000));
-          continue;
-        }
-        // 403 且无任何限流 header：视为普通权限错误，不重试
-        throw new GithubError(`GitHub API ${res.status}`, res.status, url);
+      if (res.status === 401) {
+        rejectedCredential = process.env.GITHUB_TOKEN;
+        throw new GithubError('github-auth-invalid', 401, API_BASE);
+      }
+
+      if (await limits.observe(res, resource, attempt)) {
+        lastError = new GithubError(`GitHub API ${res.status}`, res.status, url);
+        if (!res.bodyUsed) await res.body?.cancel();
+        // Wait at the next dispatch, sharing the full server cooldown across workers.
+        // A one-attempt preflight records the cooldown but returns without blocking.
+        if (attempt + 1 === maxRetries) break;
+        continue;
       }
 
       if (!res.ok) {
@@ -153,6 +184,7 @@ export async function fetchRawFile(
   filePath: string,
   branch?: string | null
 ): Promise<string | null> {
+  assertGithubAuthenticationHealthy();
   const url = `https://raw.githubusercontent.com/${fullName}/${branch ? branch : "HEAD"}/${filePath}`;
   const res = await fetch(url, {
     headers: { "User-Agent": "dsh-market-collector" },
@@ -177,7 +209,8 @@ export async function fetchFileViaApi(
     );
     if (!data?.content) return null;
     return { content: Buffer.from(data.content, "base64").toString("utf-8"), sha: data.sha };
-  } catch {
+  } catch (error) {
+    if (isGithubAuthenticationFailure(error)) throw error;
     return null;
   }
 }

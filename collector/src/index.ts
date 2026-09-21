@@ -23,12 +23,16 @@ import type { DshPlugin, DshPack, MarketData } from "@dsh-top100/schema";
 import "./env.js"; // 加载仓库根 .env（GITHUB_TOKEN）
 import {
   githubFetch,
+  assertGithubAuthenticationHealthy,
+  isGithubAuthenticationFailure,
   fetchRepoRoot,
   fetchRawFile,
   rejectPrivateRepository,
   redactPrivateRejections,
   type GithubRepo,
 } from "./github.js";
+import { assertGithubAccess, GithubAccessError, githubAccessCode } from './github-auth.js';
+import { takeWeeklyCandidates, acknowledgeWeeklyCandidates, deferWeeklyCandidates } from './weekly-discovery.js';
 import { fetchRepositoryUpdates } from "./github-batch.js";
 import { fetchAwesomeEntries } from "./sources/awesome.js";
 import { scanOrg } from "./sources/github-search.js";
@@ -145,10 +149,7 @@ function loadPreviousPlugins(): Map<string, DshPlugin> {
 
 async function main() {
   const concurrency = collectionConcurrency();
-  if (!process.env.GITHUB_TOKEN) {
-    console.error("缺少 GITHUB_TOKEN 环境变量");
-    process.exit(1);
-  }
+  await assertGithubAccess();
 
   console.log("=== DSH Market collector v2 ===");
   console.log("[1/5] 扫描数据源...");
@@ -182,11 +183,14 @@ async function main() {
     mode: discoveryMode,
     since: configuredSince,
   });
+  assertGithubAuthenticationHealthy();
   const orgRepos = await scanOrg();
 
   // 2.5 提交插件 issue（人工提交的仓库，并入候选池走相同检测流程）
   // fullName(lower) -> 带仓库的 issue 关联与作者自述
   const issueRepos = await fetchSubmissionRepos();
+  const weekly = process.env.DSH_DAILY_UPDATE === '1'
+    ? await takeWeeklyCandidates(DATA_DIR, 200) : { candidates: [], receipt: [] };
 
   // 3. 合并去重
   const candidates = new Map<string, Candidate>();
@@ -225,6 +229,9 @@ async function main() {
     }
   }
   for (const r of orgRepos) addCandidate(r.full_name, r, "org");
+  for (const candidate of weekly.candidates) {
+    for (const source of candidate.sources) addCandidate(candidate.fullName, null, source);
+  }
   for (const [fn, meta] of issueRepos) {
     addCandidate(fn, null, "issue-submission", {
       submissionIssues: meta.submissionIssues,
@@ -249,6 +256,7 @@ async function main() {
 
   await runPool(all, async (candidate) => {
     try {
+      assertGithubAuthenticationHealthy();
       // repo 元数据（缓存 24h）
       let repo = candidate.repo;
       if (!repo) {
@@ -453,6 +461,7 @@ async function main() {
         hasSkillMd: detection.skillFiles.length > 0,
       });
     } catch (err) {
+      if (isGithubAuthenticationFailure(err)) throw err;
       if (err instanceof ReviewedTargetValidationError) invalidReviewedTargets.add(candidate.fullName.toLowerCase());
       rejected.push({
         fullName: candidate.fullName,
@@ -464,7 +473,14 @@ async function main() {
         console.log(`  checked: ${checkedCandidates}/${all.length}, detected: ${detected.length}, rejected: ${rejected.length}`);
       }
     }
-  }, concurrency);
+  }, concurrency, isGithubAuthenticationFailure);
+
+  assertGithubAuthenticationHealthy();
+  // Only actual validation or a definitive exclusion acknowledges queued work.
+  // Later baseline restoration after a transient error must not count as completion.
+  const handledWeeklyIds = new Set([
+    ...detected.map(item => item.candidate.fullName.toLowerCase()), ...definitiveRejections, ...EXCLUDED_REPOS,
+  ]);
 
   console.log(`  detected: ${detected.length}, rejected: ${rejected.length}`);
 
@@ -617,6 +633,7 @@ async function main() {
     plugin.install.commands = parsed.commands.length ? parsed.commands : undefined;
     plugin.install.commandSource = parsed.source === "template" ? undefined : parsed.source;
   }
+  assertGithubAuthenticationHealthy();
   console.log("[3/5] 实用五维评分...");
   const p99 = computeP99Stars(detected.map((d) => d.repo.stargazers_count));
   for (const d of detected) {
@@ -810,6 +827,7 @@ async function main() {
     console.log(`  packs translated: ${translated}`);
   }
 
+  assertGithubAuthenticationHealthy();
   console.log("[4/5] 生成数据文件...");
   const market: MarketData = {
     schemaVersion: 2,
@@ -911,9 +929,17 @@ async function main() {
     .join(", ");
   console.log(`  plugins.json: ${market.plugins.length} plugins`);
   console.log(`  top5: ${top5}`);
+  // Keep queue receipts pending until the durable source output and reports succeeded.
+  await acknowledgeWeeklyCandidates(DATA_DIR, weekly.receipt.filter(item => handledWeeklyIds.has(item.id)));
+  await deferWeeklyCandidates(DATA_DIR, weekly.receipt.filter(item => !handledWeeklyIds.has(item.id)));
 }
 
 main().catch((err) => {
+  if (err instanceof GithubAccessError || isGithubAuthenticationFailure(err)) {
+    const code = githubAccessCode(err);
+    console.error(`collector stopped: ${code}`);
+    process.exit(code === 'github-preflight-unavailable' ? 1 : 78);
+  }
   console.error("collector failed:", err);
   process.exit(1);
 });

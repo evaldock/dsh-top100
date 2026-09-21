@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { GithubRepo } from "../src/github.js";
+import { GithubError, type GithubRepo } from "../src/github.js";
 import { discoverRepositories } from "../src/sources/discovery.js";
 
 function repo(id: number, fullName: string): GithubRepo {
@@ -28,6 +28,16 @@ function repo(id: number, fullName: string): GithubRepo {
 }
 
 describe("discoverRepositories", () => {
+  it('aborts authentication failure instead of treating it as partial source coverage', async () => {
+    const codeSearch = vi.fn(), npmSearch = vi.fn();
+    await expect(discoverRepositories({
+      config: { repositoryQueries: [{ id: 'first', query: 'first' }],
+        codeQueries: [{ id: 'code', query: 'code' }], npmQueries: [{ id: 'npm', query: 'npm' }] },
+      partitionOptions: { request: async () => { throw new GithubError('github-auth-invalid', 401, 'https://api.github.com'); } },
+      codeSearch, npmSearch,
+    })).rejects.toThrow();
+    expect(codeSearch).not.toHaveBeenCalled(); expect(npmSearch).not.toHaveBeenCalled();
+  });
   it("merges repository, code, and npm evidence for the same candidate", async () => {
     const result = await discoverRepositories({
       config: {

@@ -14,19 +14,22 @@ export function collectionConcurrency(value = process.env.DSH_COLLECTION_CONCURR
 export async function runPool<T>(
   items: T[],
   worker: (item: T, index: number) => Promise<void>,
-  concurrency = 10
+  concurrency = 10,
+  isFatal: (error: unknown) => boolean = () => false,
 ): Promise<void> {
   let next = 0;
   const n = items.length;
   const errors: Error[] = [];
+  let fatal: unknown;
 
   async function runWorker(): Promise<void> {
-    while (true) {
+    while (!fatal) {
       const idx = next++;
       if (idx >= n) break;
       try {
         await worker(items[idx], idx);
       } catch (err) {
+        if (isFatal(err)) { fatal = err; return; }
         errors.push(err as Error);
       }
     }
@@ -34,6 +37,7 @@ export async function runPool<T>(
 
   const workers = Array.from({ length: Math.min(concurrency, n) }, () => runWorker());
   await Promise.all(workers);
+  if (fatal) throw fatal;
   if (errors.length > 0) {
     console.warn(`  [pool] ${errors.length} tasks failed (first: ${errors[0].message.slice(0, 80)})`);
   }
