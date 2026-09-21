@@ -1,4 +1,4 @@
-/** Category contract mirrored from the www.dsheval.ai rankings document. */
+/** Category contract mirrored from the www.evaldock.ai rankings document. */
 import type { PluginCategoryDefinition, PluginCategoryId, RankingEntry, RankingsDocument } from "./types.js";
 export declare const DEFAULT_CATEGORY_DEFINITIONS: readonly Omit<PluginCategoryDefinition, "count">[];
 /** Keep older published snapshots consistent with the current category wording. */

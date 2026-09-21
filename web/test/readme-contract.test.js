@@ -7,12 +7,12 @@ const githubReadme = await readFile(new URL("README.md", repo), "utf8");
 const npmReadme = await readFile(new URL("plugin/README.md", repo), "utf8");
 const pluginPackage = JSON.parse(await readFile(new URL("plugin/package.json", repo), "utf8"));
 const assets = ["dsh-website-preview.jpg", "dsh-plugin-market.png", "dsh-install-confirm.png"];
-const rawAssets = "https://raw.githubusercontent.com/dsheval/dsh-top100/main/web/public/assets/";
+const rawAssets = "https://raw.githubusercontent.com/evaldock/dsh-top100/main/web/public/assets/";
 
 test("both READMEs introduce the same product and link to the installation guide", () => {
   for (const readme of [githubReadme, npmReadme]) {
     assert.match(readme, /<h1 align="center">dsh-top100\b[^<]*<\/h1>/);
-    assert.ok(readme.includes("https://www.dsheval.ai/top100/?page=dsh#dsh"));
+    assert.ok(readme.includes("https://www.evaldock.ai/top100/?page=dsh#dsh"));
     assert.match(readme, /发现、安装和管理插件/);
     assert.match(readme, /Skills/);
     assert.doesNotMatch(readme, /一键下载|dsh-Top100/);
@@ -54,7 +54,7 @@ test("GitHub and npm reference the same real screenshots using platform-safe pat
   for (const [, src] of npmReadme.matchAll(/<img\b[^>]*src="([^"]+)"/g)) {
     assert.ok(
       src.startsWith(rawAssets)
-        || src === "https://raw.githubusercontent.com/dsheval/dsh-top100/main/docs/assets/dsh-top100-readme-cover.png"
+        || src === "https://raw.githubusercontent.com/evaldock/dsh-top100/main/docs/assets/dsh-top100-readme-cover.png"
         || src.startsWith("https://img.shields.io/"),
       "npm screenshots, cover and badges must use public absolute URLs",
     );

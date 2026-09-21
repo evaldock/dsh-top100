@@ -12,7 +12,7 @@ import { createSearchScorer, matchesSearchQuery, tokenizeSearchQuery } from "../
 import { withPublishedDescription } from "../shared/descriptions.js";
 import { catalogEvidence } from "../shared/evidence.js";
 import { isFeaturedRepository } from "../shared/featured.js";
-export const DEFAULT_DATA_URL = "https://www.dsheval.ai/data";
+export const DEFAULT_DATA_URL = "https://www.evaldock.ai/data";
 const CACHE_MS = 30 * 60 * 1000;
 const FETCH_MS = 15_000;
 const WINDOWS_FETCH_MS = 45_000;

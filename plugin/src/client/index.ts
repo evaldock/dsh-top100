@@ -5,7 +5,7 @@
 import { createElement as h } from "react";
 import { PluginErrorBoundary } from "./ErrorBoundary.js";
 import { RankingsPage } from "./RankingsPage.js";
-import { SettingsCard } from "./SettingsCard.js";
+import { SettingsCard, type Top100SettingsScope } from "./SettingsCard.js";
 import { css } from "./styles.js";
 import { en, zh, type Translate } from "./locales.js";
 
@@ -13,7 +13,7 @@ const NS = "dsh-top100";
 const STYLE_ID = "dsh-top100-plugin-css";
 
 interface LocaleService {
-  register(namespace: string, dicts: { zh: Record<string, string>; en: Record<string, string> }): unknown;
+  register(namespace: string, dicts: { zh: Record<string, string>; en: Record<string, string> }): () => void;
   bind(namespace: string): Translate;
 }
 
@@ -24,7 +24,7 @@ interface SlotsService {
 
 interface ClientContext {
   effect(callback: () => (() => void) | void, label?: string): void;
-  inject?(services: string[], callback: (scoped: { slots: SlotsService }) => void): void;
+  inject?(services: string[], callback: (scoped: { slots: SlotsService; settingsScope: { bind(spec: { namespace: string }): Top100SettingsScope } }) => void): void;
   locale: LocaleService;
   slots: SlotsService;
 }
@@ -46,7 +46,7 @@ function ensureCss(): () => void {
 
 export function apply(ctx: ClientContext): void {
   ctx.effect(() => {
-    ctx.locale.register(NS, { zh, en });
+    return ctx.locale.register(NS, { zh, en });
   }, "dsh-top100: dictionaries");
   ctx.effect(() => ensureCss(), "dsh-top100: css");
   const t = ctx.locale.bind(NS);
@@ -66,6 +66,20 @@ export function apply(ctx: ClientContext): void {
   );
 
   ctx.inject?.(["settingsScope"], (scoped) => {
+    const settings = scoped.settingsScope.bind({ namespace: NS });
+    // 0.1.6 moved community bundle configuration to the Plugins page.
+    // Slot injection waits for its owner, so each host exposes only its own entry.
+    scoped.slots.inject("plugins.bundle.config", () =>
+      scoped.slots.register(
+        {
+          name: "plugins.bundle.config",
+          key: "@dsheval/dsh-top100-plugin",
+          locale: NS,
+          inject: () => ({ t }),
+        },
+        () => h(PluginErrorBoundary, { t, children: h(SettingsCard, { t, settings }) }),
+      ),
+    );
     scoped.slots.inject("settings.plugin.item", () =>
       scoped.slots.register(
         {
@@ -74,7 +88,7 @@ export function apply(ctx: ClientContext): void {
           locale: NS,
           inject: () => ({ t }),
         },
-        () => h(PluginErrorBoundary, { t, children: h(SettingsCard, { t }) }),
+        () => h(PluginErrorBoundary, { t, children: h(SettingsCard, { t, settings }) }),
       ),
     );
   });

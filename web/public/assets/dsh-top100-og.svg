@@ -46,7 +46,7 @@
 
     <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace">
       <text x="778" y="193" fill="#66716d" font-size="12" font-weight="800" letter-spacing="1">NPM</text>
-      <text x="778" y="222" fill="#17211f" font-size="21" font-weight="800">v1.3.9</text>
+      <text x="778" y="222" fill="#17211f" font-size="21" font-weight="800">v1.3.10</text>
       <line x1="778" y1="247" x2="1100" y2="247" stroke="#b8c9c5"/>
 
       <text x="778" y="280" fill="#66716d" font-size="12" font-weight="800" letter-spacing="1">DSH WEB</text>

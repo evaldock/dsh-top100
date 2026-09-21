@@ -1,6 +1,6 @@
 /** Editorial placement, never a catalog entry or a scoring input. */
 export function isFeaturedRepository(entry: { fullName?: string }): boolean {
-  return entry.fullName?.trim().toLowerCase() === "dsheval/dsh-top100";
+  return ["dsheval/dsh-top100", "evaldock/dsh-top100"].includes(entry.fullName?.trim().toLowerCase() ?? "");
 }
 
 export function showFeaturedPlugin({

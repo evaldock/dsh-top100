@@ -1,17 +1,18 @@
 export const css = `
 .dsh-top100 {
-  --t100-ink: var(--dsw-alias-label-primary, color-mix(in srgb, currentColor 92%, transparent));
-  --t100-body: var(--dsw-alias-label-secondary, color-mix(in srgb, currentColor 72%, transparent));
-  --t100-muted: var(--dsw-alias-label-tertiary, color-mix(in srgb, currentColor 58%, transparent));
-  --t100-line: var(--dsw-alias-border-l2, color-mix(in srgb, currentColor 14%, transparent));
-  --t100-surface: var(--dsw-alias-bg-layer-1, Canvas);
-  --t100-fill: var(--dsw-alias-bg-layer-2, color-mix(in srgb, currentColor 6%, transparent));
-  --t100-accent: color-mix(in srgb, #3f8b82 78%, currentColor);
+  color-scheme: light;
+  --t100-ink: #1c2024;
+  --t100-body: #60646c;
+  --t100-muted: #60646c;
+  --t100-line: #dddde5;
+  --t100-surface: #ffffff;
+  --t100-fill: #f4f4fa;
+  --t100-accent: #5b5bd6;
   --t100-accent-soft: color-mix(in srgb, var(--t100-accent) 16%, transparent);
-  /* Match the user's reference screenshot, without currentColor mixing. */
-  --t100-action: #67a298;
-  --t100-action-hover: #5f998f;
-  --t100-action-border: #67a298;
+  /* Match the website's light purple palette throughout the plugin. */
+  --t100-action: #5b5bd6;
+  --t100-action-hover: #4b4bc0;
+  --t100-action-border: #5b5bd6;
   --t100-on-action: #ffffff;
   display: flex;
   flex-direction: column;
@@ -20,8 +21,13 @@ export const css = `
   min-width: 0;
   max-width: 100%;
   color: var(--t100-ink);
+  background: var(--t100-surface);
   container-type: inline-size;
 }
+.dsh-top100.source-settings { padding: 12px; }
+.dsh-top100.source-settings label { display: grid; gap: 8px; }
+.dsh-top100.source-settings input { width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1px solid var(--t100-line); border-radius: 7px; background: var(--t100-surface); color: var(--t100-ink); font: inherit; }
+.dsh-top100.source-settings input:focus-visible { outline: 2px solid var(--t100-accent); outline-offset: 2px; }
 .dsh-top100 .market-head {
   display: grid;
   grid-template-columns: 48px minmax(0, 1fr);
@@ -194,8 +200,8 @@ export const css = `
   height: 17px;
   padding: 0 4px;
   border-radius: 99px;
-  background: var(--t100-accent);
-  color: #f8fbfa;
+  background: var(--t100-action);
+  color: var(--t100-on-action);
   font-size: 10px;
   font-weight: 700;
 }
@@ -271,9 +277,9 @@ export const css = `
   cursor: default;
 }
 .dsh-top100 .tab[aria-selected="true"] {
-  background: var(--t100-accent);
-  border-color: var(--t100-accent);
-  color: #f7f3e7;
+  background: var(--t100-action);
+  border-color: var(--t100-action-border);
+  color: var(--t100-on-action);
 }
 .dsh-top100 button.primary {
   background: var(--t100-action);
@@ -635,9 +641,9 @@ export const css = `
 .dsh-top100 .ranking-card[data-rank="1"] .rank,
 .dsh-top100 .ranking-card[data-rank="2"] .rank,
 .dsh-top100 .ranking-card[data-rank="3"] .rank {
-  border-color: var(--t100-accent);
-  background: var(--t100-accent);
-  color: #f8fbfa;
+  border-color: var(--t100-action-border);
+  background: var(--t100-action);
+  color: var(--t100-on-action);
 }
 .dsh-top100 .card-copy { min-width: 0; }
 .dsh-top100 .card-heading {
@@ -1432,8 +1438,8 @@ export const css = `
   padding: 0 7px;
   box-sizing: border-box;
   border-radius: 9px 9px 9px 3px;
-  background: var(--t100-accent);
-  color: #f8fbfa;
+  background: var(--t100-action);
+  color: var(--t100-on-action);
   font-size: 13px;
   font-weight: 750;
   font-variant-numeric: tabular-nums;

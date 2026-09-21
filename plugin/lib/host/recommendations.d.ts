@@ -3,7 +3,7 @@ import type { PluginCategoryId, RankingsDocument } from "../shared/types.js";
 import type { PluginResolvedConfig } from "./contracts.js";
 export declare const RECOMMENDATION_SKILL_NAME = "recommend-dsh-plugins";
 export declare const RECOMMENDATION_TOOL_NAME = "dsh_top100_search";
-export declare const DSHEVAL_CATALOG_URL = "https://www.dsheval.ai/top100/#ranking";
+export declare const EVALDOCK_CATALOG_URL = "https://www.evaldock.ai/top100/#ranking";
 export interface RecommendationItem {
     rank: number;
     fullName: string;

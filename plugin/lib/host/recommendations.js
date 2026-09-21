@@ -9,7 +9,7 @@ import { filterCatalog, loadSearchRankings } from "./catalog.js";
 import { readInstalled } from "./profile.js";
 export const RECOMMENDATION_SKILL_NAME = "recommend-dsh-plugins";
 export const RECOMMENDATION_TOOL_NAME = "dsh_top100_search";
-export const DSHEVAL_CATALOG_URL = "https://www.dsheval.ai/top100/#ranking";
+export const EVALDOCK_CATALOG_URL = "https://www.evaldock.ai/top100/#ranking";
 const PROVIDER_NAME = "dsh-top100";
 const DEFAULT_LIMIT = 5;
 const MAX_LIMIT = 10;
@@ -19,7 +19,7 @@ const RESOURCE_BASE = {
     path: fileURLToPath(new URL("../../skills/recommend-dsh-plugins/", import.meta.url)),
 };
 const INVOCATION = { modelInvocable: true, userInvocable: true };
-const SKILL_DESCRIPTION = "Search the DSHeval dsh-Top100 catalog and recommend suitable DeepSeek Harness plugins or Skills. " +
+const SKILL_DESCRIPTION = "Search the EvalDock dsh-Top100 catalog and recommend suitable DeepSeek Harness plugins or Skills. " +
     "Use when the user asks which DSH plugin to install, requests plugin recommendations or comparisons, " +
     "describes a capability they want to add, or asks ‘我该装哪个插件’, ‘推荐几个插件’, or ‘有没有能做某件事的插件’.";
 function skillBody(markdown) {
@@ -82,7 +82,7 @@ export function recommendationResult(document, options) {
         query,
         total: result.total,
         generatedAt: document.generatedAt,
-        catalogUrl: DSHEVAL_CATALOG_URL,
+        catalogUrl: EVALDOCK_CATALOG_URL,
         items: result.items.map((item) => ({
             rank: item.totalRank ?? item.rank,
             fullName: item.fullName,
@@ -105,7 +105,7 @@ export function recommendationResult(document, options) {
 }
 export function formatRecommendationResult(result) {
     const lines = [
-        `DSHeval Top100 搜索：${result.query}`,
+        `EvalDock Top100 搜索：${result.query}`,
         `匹配 ${result.total} 项；数据生成于 ${result.generatedAt}`,
         `市场：${result.catalogUrl}`,
     ];
@@ -125,7 +125,7 @@ export function installRecommendationCapabilities(ctx, config) {
     ctx.skills.registerProvider(() => provider);
     ctx.tools.register(defineTool({
         name: RECOMMENDATION_TOOL_NAME,
-        description: "Search the live DSHeval dsh-Top100 market for DeepSeek Harness plugins and Skills. " +
+        description: "Search the live EvalDock dsh-Top100 market for DeepSeek Harness plugins and Skills. " +
             "Use after loading recommend-dsh-plugins when selecting or comparing plugins for a user need.",
         parameters: {
             query: {
@@ -136,7 +136,7 @@ export function installRecommendationCapabilities(ctx, config) {
             category: {
                 type: "string",
                 enum: ["ai", "appearance", "coding", "knowledge", "tools", "security"],
-                description: "Optional DSHeval category filter.",
+                description: "Optional EvalDock category filter.",
             },
             limit: {
                 type: "integer",

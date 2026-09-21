@@ -29,13 +29,14 @@ import { presentRepositoryIdentity } from "./repository-identity.js";
 import { presentInstallRisk } from "./trust-presentation.js";
 import { SkillBackupList } from "./SkillBackupList.js";
 import { useDialogFocus } from "./use-dialog-focus.js";
+import { staleSnapshotLabel } from "./data-freshness.js";
 
 interface RankingsPageProps {
   t: Translate;
 }
 
 const SORT_VIEWS: RankingView[] = ["hot", "rising", "total"];
-const DSHEVAL_SITE = "https://www.dsheval.ai/top100/";
+const EVALDOCK_SITE = "https://www.evaldock.ai/top100/";
 type PageSection = "rankings" | "installed" | "diagnostics";
 const GITHUB_ICON = (
   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -144,6 +145,17 @@ export function RankingsPage({ t }: RankingsPageProps) {
   const [installAvailability, setInstallAvailability] = useState<InstallAvailability>("all");
   const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
   const [data, setData] = useState<CatalogResponse | null>(null);
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => {
+    const refresh = () => setNow(Date.now());
+    const timer = setInterval(refresh, 60_000);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, []);
+  const delayedSnapshot = staleSnapshotLabel(data, now);
   const [items, setItems] = useState<CatalogItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [errorAction, setErrorAction] = useState<"load" | "install">("load");
@@ -433,10 +445,10 @@ export function RankingsPage({ t }: RankingsPageProps) {
         <div className="head-copy">
           <div className="market-title-row">
             <h2>{t("title")}</h2>
-            <a className="github-link" href="https://github.com/dsheval/dsh-top100" aria-label="dsh-top100 GitHub" title="dsh-top100 GitHub" target="_blank" rel="noopener noreferrer">{GITHUB_ICON}</a>
+            <a className="github-link" href="https://github.com/evaldock/dsh-top100" aria-label="dsh-top100 GitHub" title="dsh-top100 GitHub" target="_blank" rel="noopener noreferrer">{GITHUB_ICON}</a>
           </div>
           {data ? <div className="meta">
-            <a className="data-source" href={DSHEVAL_SITE} target="_blank" rel="noreferrer">DSH-Eval Top100</a>
+            <a className="data-source" href={EVALDOCK_SITE} target="_blank" rel="noreferrer">EvalDock Top100</a>
             <span>{data.snapshotDate}</span>
           </div> : null}
         </div>
@@ -451,6 +463,7 @@ export function RankingsPage({ t }: RankingsPageProps) {
       <TaskStatus tracking={tracking} t={t} onViewResult={() => setInstallActivityOpen(true)} />
 
       {section === "rankings" ? <>
+        {delayedSnapshot ? <p className="cache-warning" role="status">{t("dataUpdateDelayed").replace("{date}", delayedSnapshot)}</p> : null}
         {data?.cache.stale ? <p className="cache-warning" title={data.cache.reason ?? undefined}>{t("cachedStale")}</p> : null}
 
       <div className="toolbar ranking-toolbar">

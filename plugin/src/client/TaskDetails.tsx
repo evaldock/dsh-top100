@@ -67,7 +67,7 @@ export function TaskDetails({ job, t, headingPresent = false }: { job: InstallJo
       {error.packages.length ? <p className="job-error-packages"><span>{t("installErrorPackages")}</span><code>{error.packages.join(", ")}</code></p> : null}
       {job.profileDirectory ? <p className="job-error-packages"><span>{t("taskProfileDirectory")}</span><code>{job.profileDirectory}</code></p> : null}
       <p className="job-error-hint"><span>{t("installErrorNext")}</span>{t(`installError_${errorKey}_hint`)}</p>
-      {error.kind === "ignored-builds" ? <p><a href="https://github.com/dsheval/dsh-top100/blob/main/docs/build-approval-recovery.md" target="_blank" rel="noopener noreferrer">{t("buildRecoveryGuide")}</a></p> : null}
+      {error.kind === "ignored-builds" ? <p><a href="https://github.com/evaldock/dsh-top100/blob/main/docs/build-approval-recovery.md" target="_blank" rel="noopener noreferrer">{t("buildRecoveryGuide")}</a></p> : null}
     </div> : null}
     {terminal && log && !duplicateLog ? <details className="job-error-details"><summary>{t("taskLogs")}</summary><pre>{log}</pre></details> : null}
   </div>;

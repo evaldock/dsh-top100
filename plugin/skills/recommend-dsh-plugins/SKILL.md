@@ -1,11 +1,11 @@
 ---
 name: recommend-dsh-plugins
-description: "Search the DSHeval dsh-Top100 catalog and recommend suitable DeepSeek Harness plugins or Skills. Use when the user asks which DSH plugin to install, requests plugin recommendations or comparisons, describes a capability they want to add, or asks questions such as ‘我该装哪个插件’, ‘推荐几个插件’, or ‘有没有能做某件事的插件’."
+description: "Search the EvalDock dsh-Top100 catalog and recommend suitable DeepSeek Harness plugins or Skills. Use when the user asks which DSH plugin to install, requests plugin recommendations or comparisons, describes a capability they want to add, or asks questions such as ‘我该装哪个插件’, ‘推荐几个插件’, or ‘有没有能做某件事的插件’."
 ---
 
 # Recommend DSH plugins
 
-Find recommendations from the live DSHeval dsh-Top100 catalog instead of relying on memory.
+Find recommendations from the live EvalDock dsh-Top100 catalog instead of relying on memory.
 
 ## Workflow
 
@@ -19,7 +19,7 @@ Find recommendations from the live DSHeval dsh-Top100 catalog instead of relying
    - its trust level, supporting signals, and the returned trust caveat;
    - the repository link returned by the tool.
 6. Identify at least one reasonable alternative when multiple results are close, and explain the tradeoff without claiming that a catalog signal is a security review.
-7. Mention that the results come from the DSHeval Top100 market and include its catalog link.
+7. Mention that the results come from the EvalDock Top100 market and include its catalog link.
 
 ## Guardrails
 

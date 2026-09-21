@@ -9,6 +9,7 @@ const page = readFileSync(new URL("../src/client/RankingsPage.tsx", import.meta.
 describe("website unranked editorial placement", () => {
   it("identifies only our exact repository, case-insensitively", () => {
     expect(isFeaturedRepository({ fullName: "DSHEval/DSH-Top100" })).toBe(true);
+    expect(isFeaturedRepository({ fullName: "EvalDock/DSH-Top100" })).toBe(true);
     expect(isFeaturedRepository({ fullName: "another/dsh-top100" })).toBe(false);
     expect(isFeaturedRepository({ fullName: "dsheval/dsh-top100-extra" })).toBe(false);
     expect(isFeaturedRepository({})).toBe(false);
@@ -41,7 +42,7 @@ describe("plugin ranking presentation", () => {
     const heading = page.slice(start, page.indexOf("</div>", start));
     expect(heading).toContain('<h2>{t("title")}</h2>');
     expect(heading).toContain('aria-label="dsh-top100 GitHub"');
-    expect(heading).toContain('href="https://github.com/dsheval/dsh-top100"');
+    expect(heading).toContain('href="https://github.com/evaldock/dsh-top100"');
     expect(heading).toContain('rel="noopener noreferrer"');
     expect(page.match(/aria-label="dsh-top100 GitHub"/g)).toHaveLength(1);
     expect(css).toContain('.dsh-top100 .market-title-row {');

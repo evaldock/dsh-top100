@@ -75,19 +75,20 @@ test("local preview serves the Top100 mount and preserves old page queries", asy
   assert.equal(missing.status, 404);
 });
 
-test("public catalog links migrate while released plugin data stays compatible", async () => {
+test("public catalog and plugin defaults use EvalDock while the npm identity stays compatible", async () => {
   const read = async (path) => readFile(new URL(path, repo), "utf8");
   const pkg = JSON.parse(await read("plugin/package.json"));
-  assert.equal(pkg.homepage, "https://www.dsheval.ai/top100/");
+  assert.equal(pkg.name, "@dsheval/dsh-top100-plugin");
+  assert.equal(pkg.homepage, "https://www.evaldock.ai/top100/");
   const host = await read("plugin/src/host/catalog.ts");
-  assert.ok(host.includes('DEFAULT_DATA_URL = "https://www.dsheval.ai/data"'));
+  assert.ok(host.includes('DEFAULT_DATA_URL = "https://www.evaldock.ai/data"'));
   const recommendations = await read("plugin/src/host/recommendations.ts");
-  assert.ok(recommendations.includes('DSHEVAL_CATALOG_URL = "https://www.dsheval.ai/top100/#ranking"'));
+  assert.ok(recommendations.includes('EVALDOCK_CATALOG_URL = "https://www.evaldock.ai/top100/#ranking"'));
   const client = await read("plugin/src/client/RankingsPage.tsx");
-  assert.ok(client.includes('DSHEVAL_SITE = "https://www.dsheval.ai/top100/"'));
+  assert.ok(client.includes('EVALDOCK_SITE = "https://www.evaldock.ai/top100/"'));
   for (const file of ["README.md", "plugin/README.md"]) {
     const readme = await read(file);
-    assert.ok(readme.includes("https://www.dsheval.ai/top100/?page=dsh#dsh"));
+    assert.ok(readme.includes("https://www.evaldock.ai/top100/?page=dsh#dsh"));
     assert.ok(readme.includes("不代表项目已通过能力评测"));
   }
   for (const file of ["index.html", "skills.html", "docs.html", "top300.html"]) {

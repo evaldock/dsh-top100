@@ -1,4 +1,4 @@
-/** Category contract mirrored from the www.dsheval.ai rankings document. */
+/** Category contract mirrored from the www.evaldock.ai rankings document. */
 export const DEFAULT_CATEGORY_DEFINITIONS = [
     { id: "ai", label: "Agent 增强", description: "模型能力、提示词、记忆、上下文、多 Agent 协作与智能体增强。" },
     { id: "appearance", label: "外观", description: "主题、皮肤、界面组件、桌面体验、图标与可视化面板。" },

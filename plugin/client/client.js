@@ -1116,7 +1116,7 @@ function TaskDetails({ job, t, headingPresent = false }) {
 						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: t("installErrorNext") }), t(`installError_${errorKey}_hint`)]
 					}),
 					error.kind === "ignored-builds" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", { children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("a", {
-						href: "https://github.com/dsheval/dsh-top100/blob/main/docs/build-approval-recovery.md",
+						href: "https://github.com/evaldock/dsh-top100/blob/main/docs/build-approval-recovery.md",
 						target: "_blank",
 						rel: "noopener noreferrer",
 						children: t("buildRecoveryGuide")
@@ -2621,7 +2621,7 @@ function ManagedPage({ t, tracking, retryUpdate, onRetryConsumed, initialQuery =
 											rel: "noreferrer",
 											children: [t("viewProject"), " ↗"]
 										}) : null, item.protected ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("a", {
-											href: "https://www.dsheval.ai/top100/?page=dsh#dsh",
+											href: "https://www.evaldock.ai/top100/?page=dsh#dsh",
 											target: "_blank",
 											rel: "noreferrer",
 											children: [t("maintenanceGuide"), " ↗"]
@@ -2661,13 +2661,44 @@ function presentRepositoryIdentity(entry) {
 }
 
 //#endregion
+//#region src/client/data-freshness.ts
+const STALE_AFTER_MS = 2160 * 60 * 1e3;
+const DAY_MS = 1440 * 60 * 1e3;
+function snapshotDay(value) {
+	if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+	const utc = Date.parse(`${value}T00:00:00Z`);
+	if (!Number.isFinite(utc) || new Date(utc).toISOString().slice(0, 10) !== value) return null;
+	return {
+		label: value,
+		start: utc - 480 * 60 * 1e3
+	};
+}
+function staleSnapshotLabel(metadata, now = Date.now()) {
+	if (!metadata || !Number.isFinite(now)) return null;
+	const value = metadata.generatedAt;
+	const generated = typeof value === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(value) && snapshotDay(value.slice(0, 10)) ? Date.parse(value) : NaN;
+	const day = snapshotDay(metadata.snapshotDate);
+	const validDay = day && day.start <= now ? day : null;
+	const candidates = [];
+	if (Number.isFinite(generated) && generated <= now) candidates.push(generated);
+	if (validDay) candidates.push(validDay.start + DAY_MS);
+	if (!candidates.length || now - Math.min(...candidates) <= STALE_AFTER_MS) return null;
+	return validDay?.label ?? new Intl.DateTimeFormat("sv-SE", {
+		timeZone: "Asia/Shanghai",
+		year: "numeric",
+		month: "2-digit",
+		day: "2-digit"
+	}).format(new Date(generated));
+}
+
+//#endregion
 //#region src/client/RankingsPage.tsx
 const SORT_VIEWS = [
 	"hot",
 	"rising",
 	"total"
 ];
-const DSHEVAL_SITE = "https://www.dsheval.ai/top100/";
+const EVALDOCK_SITE = "https://www.evaldock.ai/top100/";
 const GITHUB_ICON = /* @__PURE__ */ (0, react_jsx_runtime.jsx)("svg", {
 	viewBox: "0 0 24 24",
 	"aria-hidden": "true",
@@ -2796,6 +2827,17 @@ function RankingsPage({ t }) {
 	const [installAvailability, setInstallAvailability] = (0, react.useState)("all");
 	const [categoryMenuOpen, setCategoryMenuOpen] = (0, react.useState)(false);
 	const [data, setData] = (0, react.useState)(null);
+	const [now, setNow] = (0, react.useState)(Date.now);
+	(0, react.useEffect)(() => {
+		const refresh = () => setNow(Date.now());
+		const timer = setInterval(refresh, 6e4);
+		document.addEventListener("visibilitychange", refresh);
+		return () => {
+			clearInterval(timer);
+			document.removeEventListener("visibilitychange", refresh);
+		};
+	}, []);
+	const delayedSnapshot = staleSnapshotLabel(data, now);
 	const [items, setItems] = (0, react.useState)([]);
 	const [error, setError] = (0, react.useState)(null);
 	const [errorAction, setErrorAction] = (0, react.useState)("load");
@@ -3105,7 +3147,7 @@ function RankingsPage({ t }) {
 						className: "market-title-row",
 						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h2", { children: t("title") }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("a", {
 							className: "github-link",
-							href: "https://github.com/dsheval/dsh-top100",
+							href: "https://github.com/evaldock/dsh-top100",
 							"aria-label": "dsh-top100 GitHub",
 							title: "dsh-top100 GitHub",
 							target: "_blank",
@@ -3116,10 +3158,10 @@ function RankingsPage({ t }) {
 						className: "meta",
 						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("a", {
 							className: "data-source",
-							href: DSHEVAL_SITE,
+							href: EVALDOCK_SITE,
 							target: "_blank",
 							rel: "noreferrer",
-							children: "DSH-Eval Top100"
+							children: "EvalDock Top100"
 						}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: data.snapshotDate })]
 					}) : null]
 				})]
@@ -3160,6 +3202,11 @@ function RankingsPage({ t }) {
 				onViewResult: () => setInstallActivityOpen(true)
 			}),
 			section === "rankings" ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [
+				delayedSnapshot ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+					className: "cache-warning",
+					role: "status",
+					children: t("dataUpdateDelayed").replace("{date}", delayedSnapshot)
+				}) : null,
 				data?.cache.stale ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 					className: "cache-warning",
 					title: data.cache.reason ?? void 0,
@@ -3696,13 +3743,71 @@ function RankingsPage({ t }) {
 
 //#endregion
 //#region src/client/SettingsCard.tsx
-function SettingsCard({ t }) {
-	return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-		className: "dsh-top100",
-		children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h3", { children: t("cardTitle") }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-			className: "lede",
-			children: t("cardHint")
-		})]
+function SettingsCard({ t, settings }) {
+	const snapshot = (0, react.useSyncExternalStore)((listener) => settings.subscribe(listener), () => settings.getSnapshot());
+	const [draft, setDraft] = (0, react.useState)(null);
+	const [saving, setSaving] = (0, react.useState)(false);
+	const [message, setMessage] = (0, react.useState)("");
+	const mounted = (0, react.useRef)(true);
+	(0, react.useEffect)(() => {
+		mounted.current = true;
+		return () => {
+			mounted.current = false;
+		};
+	}, []);
+	const writable = snapshot.status === "ready" && snapshot.writable;
+	return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("form", {
+		className: "dsh-top100 source-settings",
+		onSubmit: async (event) => {
+			event.preventDefault();
+			if (!writable || saving || draft === null) return;
+			setSaving(true);
+			setMessage("");
+			try {
+				const url = new URL(draft.trim());
+				if (!["http:", "https:"].includes(url.protocol)) throw new Error(t("sourceInvalid"));
+				await settings.set("dataUrl", draft.trim().replace(/\/+$/, ""));
+				if (mounted.current) {
+					setDraft(null);
+					setMessage(t("sourceSaved"));
+				}
+			} catch (error) {
+				if (mounted.current) setMessage(error instanceof Error ? error.message : String(error));
+			} finally {
+				if (mounted.current) setSaving(false);
+			}
+		},
+		children: [
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h3", { children: t("cardTitle") }),
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+				className: "lede",
+				children: t("cardHint")
+			}),
+			/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", { children: [t("cardTitle"), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
+				type: "url",
+				value: draft ?? snapshot.value?.dataUrl ?? "",
+				disabled: !writable || saving,
+				onChange: (event) => {
+					setDraft(event.target.value);
+					setMessage("");
+				},
+				required: true
+			})] }),
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", { children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+				className: "primary",
+				type: "submit",
+				disabled: !writable || saving || draft === null,
+				children: saving ? t("sourceSaving") : t("sourceSave")
+			}) }),
+			!writable ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+				className: "lede",
+				children: t("sourceReadOnly")
+			}) : null,
+			message ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+				role: "status",
+				children: message
+			}) : null
+		]
 	});
 }
 
@@ -3710,18 +3815,19 @@ function SettingsCard({ t }) {
 //#region src/client/styles.ts
 const css = `
 .dsh-top100 {
-  --t100-ink: var(--dsw-alias-label-primary, color-mix(in srgb, currentColor 92%, transparent));
-  --t100-body: var(--dsw-alias-label-secondary, color-mix(in srgb, currentColor 72%, transparent));
-  --t100-muted: var(--dsw-alias-label-tertiary, color-mix(in srgb, currentColor 58%, transparent));
-  --t100-line: var(--dsw-alias-border-l2, color-mix(in srgb, currentColor 14%, transparent));
-  --t100-surface: var(--dsw-alias-bg-layer-1, Canvas);
-  --t100-fill: var(--dsw-alias-bg-layer-2, color-mix(in srgb, currentColor 6%, transparent));
-  --t100-accent: color-mix(in srgb, #3f8b82 78%, currentColor);
+  color-scheme: light;
+  --t100-ink: #1c2024;
+  --t100-body: #60646c;
+  --t100-muted: #60646c;
+  --t100-line: #dddde5;
+  --t100-surface: #ffffff;
+  --t100-fill: #f4f4fa;
+  --t100-accent: #5b5bd6;
   --t100-accent-soft: color-mix(in srgb, var(--t100-accent) 16%, transparent);
-  /* Match the user's reference screenshot, without currentColor mixing. */
-  --t100-action: #67a298;
-  --t100-action-hover: #5f998f;
-  --t100-action-border: #67a298;
+  /* Match the website's light purple palette throughout the plugin. */
+  --t100-action: #5b5bd6;
+  --t100-action-hover: #4b4bc0;
+  --t100-action-border: #5b5bd6;
   --t100-on-action: #ffffff;
   display: flex;
   flex-direction: column;
@@ -3730,8 +3836,13 @@ const css = `
   min-width: 0;
   max-width: 100%;
   color: var(--t100-ink);
+  background: var(--t100-surface);
   container-type: inline-size;
 }
+.dsh-top100.source-settings { padding: 12px; }
+.dsh-top100.source-settings label { display: grid; gap: 8px; }
+.dsh-top100.source-settings input { width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1px solid var(--t100-line); border-radius: 7px; background: var(--t100-surface); color: var(--t100-ink); font: inherit; }
+.dsh-top100.source-settings input:focus-visible { outline: 2px solid var(--t100-accent); outline-offset: 2px; }
 .dsh-top100 .market-head {
   display: grid;
   grid-template-columns: 48px minmax(0, 1fr);
@@ -3904,8 +4015,8 @@ const css = `
   height: 17px;
   padding: 0 4px;
   border-radius: 99px;
-  background: var(--t100-accent);
-  color: #f8fbfa;
+  background: var(--t100-action);
+  color: var(--t100-on-action);
   font-size: 10px;
   font-weight: 700;
 }
@@ -3981,9 +4092,9 @@ const css = `
   cursor: default;
 }
 .dsh-top100 .tab[aria-selected="true"] {
-  background: var(--t100-accent);
-  border-color: var(--t100-accent);
-  color: #f7f3e7;
+  background: var(--t100-action);
+  border-color: var(--t100-action-border);
+  color: var(--t100-on-action);
 }
 .dsh-top100 button.primary {
   background: var(--t100-action);
@@ -4345,9 +4456,9 @@ const css = `
 .dsh-top100 .ranking-card[data-rank="1"] .rank,
 .dsh-top100 .ranking-card[data-rank="2"] .rank,
 .dsh-top100 .ranking-card[data-rank="3"] .rank {
-  border-color: var(--t100-accent);
-  background: var(--t100-accent);
-  color: #f8fbfa;
+  border-color: var(--t100-action-border);
+  background: var(--t100-action);
+  color: var(--t100-on-action);
 }
 .dsh-top100 .card-copy { min-width: 0; }
 .dsh-top100 .card-heading {
@@ -5142,8 +5253,8 @@ const css = `
   padding: 0 7px;
   box-sizing: border-box;
   border-radius: 9px 9px 9px 3px;
-  background: var(--t100-accent);
-  color: #f8fbfa;
+  background: var(--t100-action);
+  color: var(--t100-on-action);
   font-size: 13px;
   font-weight: 750;
   font-variant-numeric: tabular-nums;
@@ -5744,6 +5855,7 @@ const zh = {
 	skillEntries: "个 Skills",
 	cachedFresh: "本地快照可用",
 	cachedStale: "正在显示较旧快照",
+	dataUpdateDelayed: "数据更新延迟，当前展示 {date} 的快照（北京时间）。榜单将在新数据发布后更新。",
 	cacheAgeUnknown: "缓存时间未知",
 	minutesAgo: "分钟前获取",
 	hoursAgo: "小时前获取",
@@ -6061,8 +6173,13 @@ const zh = {
 	activation_broken: "运行状态：安装或配置验证失败",
 	activation_unknown: "运行状态：尚未取得运行时证据",
 	skillHint: "这是 Skill，不能通过 dsh plugin 一键装进 Web profile。",
+	sourceSave: "保存地址",
+	sourceSaving: "正在保存…",
+	sourceSaved: "数据源已保存",
+	sourceInvalid: "请输入 HTTP 或 HTTPS 地址",
+	sourceReadOnly: "当前连接无法修改数据源",
 	cardTitle: "榜单数据源",
-	cardHint: "Host 端从该地址读取 manifest 与不可变榜单快照；旧数据源会自动回退兼容文件。",
+	cardHint: "插件和 Skills 共用此数据源。保存后生效，也可以使用自定义榜单地址。",
 	diagLoading: "正在扫描当前 DSH Profile…",
 	diagLoadFail: "诊断加载失败",
 	diagOk: "已检查项目无错误",
@@ -6205,6 +6322,7 @@ const en = {
 	skillEntries: "Skills",
 	cachedFresh: "Local snapshot available",
 	cachedStale: "Showing an older snapshot",
+	dataUpdateDelayed: "Data update delayed. Showing the {date} snapshot (Beijing time). Rankings will update when new data is published.",
 	cacheAgeUnknown: "cache age unknown",
 	minutesAgo: "minutes ago",
 	hoursAgo: "hours ago",
@@ -6522,8 +6640,13 @@ const en = {
 	activation_broken: "Runtime: installation or configuration check failed",
 	activation_unknown: "Runtime: no authoritative evidence yet",
 	skillHint: "This is a Skill and cannot be installed into the Web profile with dsh plugin.",
+	sourceSave: "Save URL",
+	sourceSaving: "Saving…",
+	sourceSaved: "Catalog source saved",
+	sourceInvalid: "Enter an HTTP or HTTPS URL",
+	sourceReadOnly: "This connection cannot change the catalog source",
 	cardTitle: "Rankings source",
-	cardHint: "The host reads the manifest and immutable ranking snapshots from this URL, with legacy fallback.",
+	cardHint: "Plugins and Skills share this source. Save to apply, or use your own catalog URL.",
 	diagLoading: "Scanning the current DSH profile…",
 	diagLoadFail: "Could not load diagnostics",
 	diagOk: "No errors in checked items",
@@ -6567,7 +6690,7 @@ function ensureCss() {
 }
 function apply(ctx) {
 	ctx.effect(() => {
-		ctx.locale.register(NS, {
+		return ctx.locale.register(NS, {
 			zh,
 			en
 		});
@@ -6586,6 +6709,19 @@ function apply(ctx) {
 		children: (0, react.createElement)(RankingsPage, { t })
 	})));
 	ctx.inject?.(["settingsScope"], (scoped) => {
+		const settings = scoped.settingsScope.bind({ namespace: NS });
+		scoped.slots.inject("plugins.bundle.config", () => scoped.slots.register({
+			name: "plugins.bundle.config",
+			key: "@dsheval/dsh-top100-plugin",
+			locale: NS,
+			inject: () => ({ t })
+		}, () => (0, react.createElement)(PluginErrorBoundary, {
+			t,
+			children: (0, react.createElement)(SettingsCard, {
+				t,
+				settings
+			})
+		})));
 		scoped.slots.inject("settings.plugin.item", () => scoped.slots.register({
 			name: "settings.plugin.item",
 			key: "dsh-top100",
@@ -6593,7 +6729,10 @@ function apply(ctx) {
 			inject: () => ({ t })
 		}, () => (0, react.createElement)(PluginErrorBoundary, {
 			t,
-			children: (0, react.createElement)(SettingsCard, { t })
+			children: (0, react.createElement)(SettingsCard, {
+				t,
+				settings
+			})
 		})));
 	});
 }

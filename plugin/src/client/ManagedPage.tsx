@@ -281,7 +281,7 @@ export function ManagedPage({ t, tracking, retryUpdate, onRetryConsumed, initial
               </div> : null}
                 <div className="managed-links">
                   {item.url ? <a href={item.url} target="_blank" rel="noreferrer">{t("viewProject")} ↗</a> : null}
-                  {item.protected ? <a href="https://www.dsheval.ai/top100/?page=dsh#dsh" target="_blank" rel="noreferrer">{t("maintenanceGuide")} ↗</a> : null}
+                  {item.protected ? <a href="https://www.evaldock.ai/top100/?page=dsh#dsh" target="_blank" rel="noreferrer">{t("maintenanceGuide")} ↗</a> : null}
                 </div>
               </div>
                 </div>

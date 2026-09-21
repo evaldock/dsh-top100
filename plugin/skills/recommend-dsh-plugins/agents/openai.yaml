@@ -1,4 +1,4 @@
 interface:
   display_name: "DSH 插件推荐"
-  short_description: "搜索 DSHeval Top100 市场并推荐合适的 DSH 插件"
+  short_description: "搜索 EvalDock Top100 市场并推荐合适的 DSH 插件"
   default_prompt: "Use $recommend-dsh-plugins to find and recommend the best DSH plugins for my needs."

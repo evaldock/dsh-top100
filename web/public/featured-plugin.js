@@ -1,6 +1,6 @@
 // plugin/src/shared/featured.ts
 function isFeaturedRepository(entry) {
-  return entry.fullName?.trim().toLowerCase() === "dsheval/dsh-top100";
+  return ["dsheval/dsh-top100", "evaldock/dsh-top100"].includes(entry.fullName?.trim().toLowerCase() ?? "");
 }
 function showFeaturedPlugin({
   view,

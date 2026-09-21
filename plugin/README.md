@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/dsheval/dsh-top100/main/docs/assets/dsh-top100-readme-cover.png" alt="dsh-top100 · DSH-Eval plugin and Skills discovery" width="100%">
+  <img src="https://raw.githubusercontent.com/evaldock/dsh-top100/main/docs/assets/dsh-top100-readme-cover.png" alt="dsh-top100 · EvalDock plugin and Skills discovery" width="100%">
 </p>
 
 <h1 align="center">dsh-top100 · DSH 插件</h1>
@@ -10,31 +10,31 @@
 </p>
 
 <p align="center">
-  <a href="https://www.dsheval.ai/top100/"><img alt="在线体验" src="https://img.shields.io/badge/在线体验-Visit-5865f2?style=flat-square"></a>
-  <a href="https://github.com/dsheval/dsh-top100/releases/tag/v1.3.9"><img alt="正式版本 v1.3.9" src="https://img.shields.io/badge/release-v1.3.9-2f6f68?style=flat-square"></a>
+  <a href="https://www.evaldock.ai/top100/"><img alt="在线体验" src="https://img.shields.io/badge/在线体验-Visit-5865f2?style=flat-square"></a>
+  <a href="https://github.com/evaldock/dsh-top100/releases/tag/v1.3.10"><img alt="正式版本 v1.3.10" src="https://img.shields.io/badge/release-v1.3.10-2f6f68?style=flat-square"></a>
   <a href="https://www.npmjs.com/package/@dsheval/dsh-top100-plugin"><img alt="npm latest" src="https://img.shields.io/npm/v/%40dsheval%2Fdsh-top100-plugin?style=flat-square&label=npm&color=cb3837"></a>
-  <a href="https://www.dsheval.ai/top100/?page=dsh#dsh"><img alt="安装 dsh-top100" src="https://img.shields.io/badge/安装指南-接入_DSH-f2b84b?style=flat-square"></a>
-  <a href="https://github.com/dsheval/dsh-top100/blob/main/CONTRIBUTING.md"><img alt="参与贡献" src="https://img.shields.io/badge/Contribute-参与贡献-555?style=flat-square&logo=github"></a>
-  <a href="https://github.com/dsheval/dsh-top100/issues/new?labels=submission&title=%5BSubmit%5D%20owner%2Frepo"><img alt="提交插件" src="https://img.shields.io/badge/提交插件-Submit-2ea44f?style=flat-square"></a>
-  <a href="https://github.com/dsheval/dsh-top100/stargazers"><img alt="GitHub Stars" src="https://img.shields.io/github/stars/dsheval/dsh-top100?style=flat-square&logo=github&label=Stars"></a>
-  <a href="https://www.dsheval.ai/top100/#ranking"><img alt="收录规模以实时榜单为准" src="https://img.shields.io/badge/收录-实时更新-5865f2?style=flat-square"></a>
-  <a href="https://github.com/dsheval/dsh-top100/blob/main/LICENSE"><img alt="MIT License" src="https://img.shields.io/github/license/dsheval/dsh-top100?style=flat-square&label=License"></a>
-  <a href="https://github.com/dsheval/dsh-top100/actions/workflows/ci.yml"><img alt="CI Status" src="https://img.shields.io/github/actions/workflow/status/dsheval/dsh-top100/ci.yml?branch=main&style=flat-square&label=CI"></a>
-  <a href="https://www.dsheval.ai/top100/"><img alt="每日 06:00 自动更新" src="https://img.shields.io/badge/每日自动更新-06%3A00-2ea44f?style=flat-square"></a>
+  <a href="https://www.evaldock.ai/top100/?page=dsh#dsh"><img alt="安装 dsh-top100" src="https://img.shields.io/badge/安装指南-接入_DSH-f2b84b?style=flat-square"></a>
+  <a href="https://github.com/evaldock/dsh-top100/blob/main/CONTRIBUTING.md"><img alt="参与贡献" src="https://img.shields.io/badge/Contribute-参与贡献-555?style=flat-square&logo=github"></a>
+  <a href="https://github.com/evaldock/dsh-top100/issues/new?labels=submission&title=%5BSubmit%5D%20owner%2Frepo"><img alt="提交插件" src="https://img.shields.io/badge/提交插件-Submit-2ea44f?style=flat-square"></a>
+  <a href="https://github.com/evaldock/dsh-top100/stargazers"><img alt="GitHub Stars" src="https://img.shields.io/github/stars/evaldock/dsh-top100?style=flat-square&logo=github&label=Stars"></a>
+  <a href="https://www.evaldock.ai/top100/#ranking"><img alt="收录规模以实时榜单为准" src="https://img.shields.io/badge/收录-实时更新-5865f2?style=flat-square"></a>
+  <a href="https://github.com/evaldock/dsh-top100/blob/main/LICENSE"><img alt="MIT License" src="https://img.shields.io/github/license/evaldock/dsh-top100?style=flat-square&label=License"></a>
+  <a href="https://github.com/evaldock/dsh-top100/actions/workflows/ci.yml"><img alt="CI Status" src="https://img.shields.io/github/actions/workflow/status/evaldock/dsh-top100/ci.yml?branch=main&style=flat-square&label=CI"></a>
+  <a href="https://www.evaldock.ai/top100/"><img alt="每日 06:00 自动更新" src="https://img.shields.io/badge/每日自动更新-06%3A00-2ea44f?style=flat-square"></a>
 </p>
 
 <p align="center">
   <strong>官方网站：</strong>
-  <a href="https://www.dsheval.ai/top100/"><strong>https://www.dsheval.ai/top100/</strong></a>
+  <a href="https://www.evaldock.ai/top100/"><strong>https://www.evaldock.ai/top100/</strong></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/dsheval/dsh-top100">GitHub 源码</a> · <a href="https://github.com/dsheval/dsh-top100/issues">问题反馈</a>
+  <a href="https://github.com/evaldock/dsh-top100">GitHub 源码</a> · <a href="https://github.com/evaldock/dsh-top100/issues">问题反馈</a>
 </p>
 
 在 DeepSeek Harness Web 的设置页浏览中文榜单、搜索所需能力，并在核对来源、脚本与风险后确认安装。与官网共用榜单数据，无需自行运行采集器或数据库。
 
-Top100 是 [DSH-Eval](https://www.dsheval.ai/) 旗下的插件与 Skills 发现栏目；收录与排行依据公开项目信息，不代表项目已通过能力评测。评测结果与方法请访问 [DSH-Eval 主站](https://www.dsheval.ai/results)。
+Top100 是 [EvalDock](https://www.evaldock.ai/) 旗下的插件与 Skills 发现栏目；收录与排行依据公开项目信息，不代表项目已通过能力评测。评测结果与方法请访问 [EvalDock 主站](https://www.evaldock.ai/results)。
 
 ## 可以做什么
 
@@ -46,10 +46,10 @@ Top100 是 [DSH-Eval](https://www.dsheval.ai/) 旗下的插件与 Skills 发现�
 
 ## 快速开始
 
-建议使用 **Node.js 24 LTS** 和 **DSH Web 0.1.5-rc.2**。本版保留已有旧宿主兼容范围，实际验证与限制见[兼容说明](https://github.com/dsheval/dsh-top100/blob/main/docs/release-1.3.5.md)。普通 npm/npx 用户请在 DSH 源码目录外，依次运行：
+建议使用 **Node.js 24 LTS** 和 **DSH Web 0.1.5-rc.2**。本版同时适配 **DSH Web 0.1.6-alpha.2**，无需为插件升级切换到 alpha。实际验证与限制见[兼容说明](https://github.com/evaldock/dsh-top100/blob/main/docs/release-1.3.10.md)。普通 npm/npx 用户请在 DSH 源码目录外，依次运行：
 
 ```sh
-npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web add @dsheval/dsh-top100-plugin@1.3.9
+npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web add @dsheval/dsh-top100-plugin@1.3.10
 npx @deepseek-ai/dsh@0.1.5-rc.2 web
 ```
 
@@ -60,7 +60,7 @@ npx @deepseek-ai/dsh@0.1.5-rc.2 web
 
 ```yaml
 minimumReleaseAgeExclude:
-  - '@dsheval/dsh-top100-plugin@1.3.9'
+  - '@dsheval/dsh-top100-plugin@1.3.10'
 ```
 
 默认文件位于用户主目录下的 `.dsh/profiles/web/pnpm-workspace.yaml`；设置了 `DSH_HOME` 时使用该目录下的 `profiles/web/pnpm-workspace.yaml`。首次安装命令会准备 Profile；尚未创建 Profile 时，可先运行 `npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web list`。若 Profile 已存在但缺少 `pnpm-workspace.yaml`，请在该 Profile 目录中创建此文件，再加入上述配置。全局或源码用户需沿用各自的命令前缀。
@@ -68,7 +68,7 @@ minimumReleaseAgeExclude:
 保存后，用同一种方式重新安装：
 
 ```sh
-npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web add -w @dsheval/dsh-top100-plugin@1.3.9
+npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web add -w @dsheval/dsh-top100-plugin@1.3.10
 ```
 
 该例外只放行这个版本，其他依赖仍遵守原等待期；如果报错指向其他包，应单独核对该包。后续升级须使用新版安装指引，不要沿用旧版本例外。
@@ -77,7 +77,7 @@ npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web add -w @dsheval/dsh-top100-
 
 打开 DSH Web，进入 **设置 → 插件排行**。安装和启动必须使用同一种命令前缀。
 
-Top100 自身的版本、只读检查更新、榜单数据源及帮助集中在 **设置 → 插件 → 插件配置 → Top100 插件排行**。检查更新不会自动安装；榜单地址仅在点击保存后通过 DSH 设置服务写入，当前连接无写入权限时显示为只读。
+DSH 0.1.5-rc.2 的榜单数据源位于 **设置 → 插件 → 插件配置 → 榜单数据源**；0.1.6-alpha.2 移到侧栏 **插件 → top100-plugin**。检查更新不会自动安装；榜单地址仅在点击保存后通过 DSH 设置服务写入，当前连接无写入权限时显示为只读。
 
 这里只安装榜单插件，不会自动安装榜单中的其他项目。安装其他插件前，仍需核对来源、脚本与风险；来源校验不等于安全审核。安装后按提示重启 DSH 并检查运行状态。
 
@@ -87,14 +87,14 @@ Top100 自身的版本、只读检查更新、榜单数据源及帮助集中在 
 
 ### 在 DSH 中浏览和管理插件
 
-<a href="https://raw.githubusercontent.com/dsheval/dsh-top100/main/web/public/assets/dsh-plugin-market.png">
-  <img src="https://raw.githubusercontent.com/dsheval/dsh-top100/main/web/public/assets/dsh-plugin-market.png" alt="dsh-top100 插件：DSH 设置中的插件市场、已安装和诊断入口" width="640">
+<a href="https://raw.githubusercontent.com/evaldock/dsh-top100/main/web/public/assets/dsh-plugin-market.png">
+  <img src="https://raw.githubusercontent.com/evaldock/dsh-top100/main/web/public/assets/dsh-plugin-market.png" alt="dsh-top100 插件：DSH 设置中的插件市场、已安装和诊断入口" width="640">
 </a>
 
 ### 也可以先在官网发现插件
 
-<a href="https://raw.githubusercontent.com/dsheval/dsh-top100/main/web/public/assets/dsh-website-preview.jpg">
-  <img src="https://raw.githubusercontent.com/dsheval/dsh-top100/main/web/public/assets/dsh-website-preview.jpg" alt="dsh-top100 官网：综合热度榜、分类筛选、搜索和插件列表" width="960">
+<a href="https://raw.githubusercontent.com/evaldock/dsh-top100/main/web/public/assets/dsh-website-preview.jpg">
+  <img src="https://raw.githubusercontent.com/evaldock/dsh-top100/main/web/public/assets/dsh-website-preview.jpg" alt="dsh-top100 官网：综合热度榜、分类筛选、搜索和插件列表" width="960">
 </a>
 
 <details>
@@ -102,8 +102,8 @@ Top100 自身的版本、只读检查更新、榜单数据源及帮助集中在 
 
 点击「安装」后，先展示精确安装源、将执行的脚本及风险；只有你确认后才会安装。
 
-<a href="https://raw.githubusercontent.com/dsheval/dsh-top100/main/web/public/assets/dsh-install-confirm.png">
-  <img src="https://raw.githubusercontent.com/dsheval/dsh-top100/main/web/public/assets/dsh-install-confirm.png" alt="插件安装确认：精确版本、生命周期脚本、重启提醒和风险确认" width="480">
+<a href="https://raw.githubusercontent.com/evaldock/dsh-top100/main/web/public/assets/dsh-install-confirm.png">
+  <img src="https://raw.githubusercontent.com/evaldock/dsh-top100/main/web/public/assets/dsh-install-confirm.png" alt="插件安装确认：精确版本、生命周期脚本、重启提醒和风险确认" width="480">
 </a>
 
 </details>
@@ -153,7 +153,7 @@ pnpm 是依赖管理和命令运行工具。首次安装会下载整个源码工
 **首次安装或升级 Top100：**依赖和构建准备成功后执行（不是每次启动都要执行）。
 
 ```sh
-pnpm dsh plugin --profile web add @dsheval/dsh-top100-plugin@1.3.9
+pnpm dsh plugin --profile web add @dsheval/dsh-top100-plugin@1.3.10
 ```
 
 **日常启动：**保持终端运行，在浏览器打开终端输出的 Web 地址；结束使用时按 `Ctrl+C` 停止。
@@ -170,7 +170,7 @@ pnpm dsh web
 如果 `dsh --version` 可以正常返回，也可以直接使用：
 
 ```sh
-dsh plugin --profile web add @dsheval/dsh-top100-plugin@1.3.9
+dsh plugin --profile web add @dsheval/dsh-top100-plugin@1.3.10
 dsh web
 ```
 
@@ -183,30 +183,30 @@ dsh web
 
 </details>
 
-更多操作说明见 [官网安装指南](https://www.dsheval.ai/top100/?page=dsh#dsh)。
+更多操作说明见 [官网安装指南](https://www.evaldock.ai/top100/?page=dsh#dsh)。
 
 ## 数据源
 
-Host 端读取 DSHeval 的同一份榜单快照，优先从 manifest 定位对应的不可变分片：
+Host 端读取 EvalDock 的同一份榜单快照，优先从 manifest 定位对应的不可变分片：
 
 ```text
-https://www.dsheval.ai/data/manifest.json
+https://www.evaldock.ai/data/manifest.json
 ```
 
 同时保留兼容数据接口：
 
 ```text
-https://www.dsheval.ai/data/rankings-hot.json
-https://www.dsheval.ai/data/rankings-rising.json
-https://www.dsheval.ai/data/rankings-search.json
-https://www.dsheval.ai/data/rankings.json
+https://www.evaldock.ai/data/rankings-hot.json
+https://www.evaldock.ai/data/rankings-rising.json
+https://www.evaldock.ai/data/rankings-search.json
+https://www.evaldock.ai/data/rankings.json
 ```
 
 总榜、分类、全库搜索和 Agent 推荐读取紧凑检索索引；详情和安装预检会按需读取权威总榜分页，补齐 README 摘要、项目元数据与安装证据。成功响应会缓存在 `$DSH_HOME/cache/dsh-top100/`；缓存过期后先返回上一次有效榜单，再在后台刷新，因此短时网络波动不会阻塞已缓存页面。相同数据请求会自动合并，避免并发重复下载。
 
 分类筛选与网页版共用数据中的 `categories` 和每个条目的 `categories` 字段。目前受控分类为 Agent 增强、外观、编程、知识、工具和安全；线上名称、说明和数量更新后，插件会随目录数据同步。Plugin 榜单与 Skills 技能库使用不同数据集。
 
-插件市场的排名、Stars、涨幅、标签和分类来自 DSHeval 发布的快照。中文简介优先使用包内与网站共用的校对数据；只有原始资料匹配，或缺少 README 的搜索条目属于已校对快照时才应用。资料变化后回退到新的有效简介。长简介默认展示两行，可展开全文。浏览器端不会额外请求 GitHub 生成文案。GitHub 用于用户主动打开项目，以及由 Host 预检安装源、获取精确版本内容；实际安装仍需用户确认。
+插件市场的排名、Stars、涨幅、标签和分类来自 EvalDock 发布的快照。中文简介优先使用包内与网站共用的校对数据；只有原始资料匹配，或缺少 README 的搜索条目属于已校对快照时才应用。资料变化后回退到新的有效简介。长简介默认展示两行，可展开全文。浏览器端不会额外请求 GitHub 生成文案。GitHub 用于用户主动打开项目，以及由 Host 预检安装源、获取精确版本内容；实际安装仍需用户确认。
 
 可用环境变量或插件配置覆盖：
 
@@ -218,7 +218,7 @@ DSH_TOP100_DATA_URL=http://127.0.0.1:8080/data dsh web
 - id: dsh-top100
   name: '@dsheval/dsh-top100-plugin'
   config:
-    dataUrl: https://www.dsheval.ai/data
+    dataUrl: https://www.evaldock.ai/data
     profile: web
 ```
 

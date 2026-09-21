@@ -51,14 +51,14 @@ pnpm --version" aria-label="复制环境检查命令">复制</button>
               <h2>安装 Top100</h2>
               <p data-site-copy="body">在终端粘贴并回车。命令会下载 DSH，并安装 Top100，无需单独安装 DSH。</p>
               <div class="dsh-command-row">
-              <code class="dsh-install-command">npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web add @dsheval/dsh-top100-plugin@1.3.9</code>
-              <button class="dsh-copy-button" type="button" data-copy-command="npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web add @dsheval/dsh-top100-plugin@1.3.9" aria-label="复制 Top100 安装命令">复制</button>
+              <code class="dsh-install-command">npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web add @dsheval/dsh-top100-plugin@1.3.10</code>
+              <button class="dsh-copy-button" type="button" data-copy-command="npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web add @dsheval/dsh-top100-plugin@1.3.10" aria-label="复制 Top100 安装命令">复制</button>
             </div>
               <p class="dsh-success">出现 <code>Ok to proceed? (y)</code> 时输入 <code>y</code> 并回车，等待命令结束后再继续。</p>
               <details class="dsh-detail dsh-inline-help">
                 <summary>检查是否装好</summary>
                 <div class="dsh-detail-body">
-                  <p>运行下面的命令，列表应包含 <code>@dsheval/dsh-top100-plugin</code> <span data-install-version>1.3.9</span>。出现报错可查看<a href="#help">安装帮助</a>。请在 DSH 源码目录外的普通文件夹执行安装和启动命令。</p>
+                  <p>运行下面的命令，列表应包含 <code>@dsheval/dsh-top100-plugin</code> <span data-install-version>1.3.10</span>。出现报错可查看<a href="#help">安装帮助</a>。请在 DSH 源码目录外的普通文件夹执行安装和启动命令。</p>
                   <div class="dsh-command-row">
               <code class="dsh-install-command">npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web list --depth 0</code>
               <button class="dsh-copy-button" type="button" data-copy-command="npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web list --depth 0" aria-label="复制安装结果检查命令">复制</button>
@@ -112,7 +112,7 @@ pnpm --version" aria-label="复制环境检查命令">复制</button>
               <details class="dsh-detail dsh-inline-help">
                 <summary>检查是否装好</summary>
                 <div class="dsh-detail-body">
-                  <p>运行下面的命令，列表应包含 <code>@dsheval/dsh-top100-plugin</code> <span data-install-version>1.3.9</span>。</p>
+                  <p>运行下面的命令，列表应包含 <code>@dsheval/dsh-top100-plugin</code> <span data-install-version>1.3.10</span>。</p>
                   <div class="dsh-command-row">
                   <code class="dsh-install-command" data-existing-command="check"></code>
                   <button class="dsh-copy-button" type="button" data-existing-copy="check" aria-label="复制现有 DSH 的安装检查命令">复制</button>
@@ -169,7 +169,7 @@ pnpm --version" aria-label="复制环境检查命令">复制</button>
               <div class="dsh-open-target" aria-label="设置，然后打开插件排行">
                 <span>设置</span><span aria-hidden="true">→</span><strong>插件排行</strong>
               </div>
-              <p>看到榜单，并在「已安装」中找到 Top100 <span data-install-version>1.3.9</span>，就装好了。</p>
+              <p>看到榜单，并在「已安装」中找到 Top100 <span data-install-version>1.3.10</span>，就装好了。</p>
               <p class="dsh-scope-note">首次使用 DSH 对话功能，还需按提示配置模型。</p>
             </div>
             <figure class="dsh-preview-item dsh-market-preview">
@@ -257,7 +257,7 @@ pnpm --version" aria-label="复制环境检查命令">复制</button>
           <p data-site-copy="body">仅当出现 <code>ERR_PNPM_NO_MATURE_MATCHING_VERSION</code> 或 <code>minimumReleaseAge</code> 报错时，才需要处理。不同 pnpm 版本和配置行为不同；可以等满报错要求的发布时间后重试。</p>
           <p data-site-copy="body">需要立即安装此版本时，在当前 Web Profile 的 <code>pnpm-workspace.yaml</code> 中合并以下精确版本例外，保留其他配置和已有条目：</p>
           <pre class="dsh-yaml"><code>minimumReleaseAgeExclude:
-  - '@dsheval/dsh-top100-plugin@1.3.9'</code></pre>
+  - '@dsheval/dsh-top100-plugin@1.3.10'</code></pre>
           <p data-site-copy="body">默认文件在用户主目录的 <code>.dsh/profiles/web/pnpm-workspace.yaml</code>；设置了 <code>DSH_HOME</code> 时，在该目录的 <code>profiles/web/</code> 下。对应路径中的安装检查命令会准备 Profile；若文件仍不存在，请在该 Profile 目录创建它。</p>
           <p data-site-copy="body">保存后，将你刚才实际执行的安装命令中的 <code>add</code> 改为 <code>add -w</code>，其余部分保持不变，再运行一次。</p>
           <p data-site-copy="body">该例外只适用于这个版本。报错若指向其他包，需单独核对，不要关闭全部依赖的等待期。</p>
@@ -273,7 +273,7 @@ pnpm --version" aria-label="复制环境检查命令">复制</button>
       <details class="dsh-detail" id="features">
         <summary>使用的版本与验证范围</summary>
         <div class="dsh-detail-body">
-          <p data-site-copy="body">本页新手命令固定使用 DSH 0.1.5-rc.2 和 <a href="https://www.npmjs.com/package/@dsheval/dsh-top100-plugin/v/1.3.9" target="_blank" rel="noopener noreferrer">Top100 <span data-install-version>1.3.9</span></a>。本轮 macOS 安装与加载验证使用 Node.js 24.20.0 和 pnpm 11.24.0，范围见 <a href="https://github.com/evaldock/dsh-top100/blob/main/docs/release-1.3.5.md" target="_blank" rel="noopener noreferrer">发布说明</a>。</p>
+          <p data-site-copy="body">本页新手命令固定使用 DSH 0.1.5-rc.2 和 <a href="https://www.npmjs.com/package/@dsheval/dsh-top100-plugin/v/1.3.10" target="_blank" rel="noopener noreferrer">Top100 <span data-install-version>1.3.10</span></a>。本轮 macOS 安装与加载验证使用 Node.js 24.20.0 和 pnpm 11.24.0，范围见 <a href="https://github.com/evaldock/dsh-top100/blob/main/docs/release-1.3.5.md" target="_blank" rel="noopener noreferrer">发布说明</a>。</p>
           <p data-site-copy="body">Windows、原生 Desktop 和其他版本组合尚未完成实机验证。单个第三方插件仍需按作者要求配置和验证。</p>
           <p data-site-copy="body">数据来自 EvalDock 排行服务。网站与插件使用同一份榜单数据，每日更新。安装包包含排行插件和 <code>recommend-dsh-plugins</code> Skill，无需自行运行采集程序或数据库。</p>
         </div>

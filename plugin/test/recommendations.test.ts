@@ -4,7 +4,7 @@ import SkillRegistry from "@deepseek-ai/dsh-skill";
 import SystemPrompt from "@deepseek-ai/dsh-system-prompt";
 import ToolRuntime from "@deepseek-ai/dsh-tools";
 import {
-  DSHEVAL_CATALOG_URL,
+  EVALDOCK_CATALOG_URL,
   formatRecommendationResult,
   installRecommendationCapabilities,
   recommendationResult,
@@ -83,7 +83,7 @@ describe("DSH plugin recommendations", () => {
     await ctx.plugin(SystemPrompt);
     await ctx.plugin(ToolRuntime);
     installRecommendationCapabilities(ctx, {
-      dataUrl: "https://www.dsheval.ai/data",
+      dataUrl: "https://www.evaldock.ai/data",
       profile: "web",
     });
 
@@ -106,7 +106,7 @@ describe("DSH plugin recommendations", () => {
       installed: { "vision-reader": "github:acme/vision-reader" },
     });
 
-    expect(result.catalogUrl).toBe(DSHEVAL_CATALOG_URL);
+    expect(result.catalogUrl).toBe(EVALDOCK_CATALOG_URL);
     expect(result.items).toHaveLength(1);
     expect(result.items[0]).toMatchObject({
       fullName: "acme/vision-reader",
@@ -140,12 +140,12 @@ describe("DSH plugin recommendations", () => {
     expect(() => recommendationResult(document, { query: "ocr", limit: 11 })).toThrow(/between 1 and 10/);
 
     const output = formatRecommendationResult(recommendationResult(document, { query: "ocr" }));
-    expect(output).toContain("DSHeval Top100 搜索：ocr");
+    expect(output).toContain("EvalDock Top100 搜索：ocr");
     expect(output).toContain("acme/vision-reader");
     expect(output).toContain("https://github.com/acme/vision-reader");
     expect(output).toContain("形态：dsh-bundle；信任层：install-source");
     expect(output).toContain("注意：这些证据不代表代码已通过安全审核");
-    expect(output).toContain(DSHEVAL_CATALOG_URL);
+    expect(output).toContain(EVALDOCK_CATALOG_URL);
   });
 
   it("returns an explicit empty result instead of fabricating a plugin", () => {

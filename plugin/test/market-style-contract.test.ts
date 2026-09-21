@@ -14,13 +14,15 @@ function colorToken(name: string): string {
 }
 
 describe("market action and status styling", () => {
-  it("matches the supplied screenshot color without mixing it with white text", () => {
-    // The user explicitly chose this lighter reference color over the
-    // higher-contrast variants. This verifies fidelity, not contrast compliance.
-    expect(colorToken("action")).toBe("#67a298");
-    expect(colorToken("action-border")).toBe("#67a298");
-    expect(colorToken("action-hover")).toBe("#5f998f");
+  it("uses the Top100 purple in a fixed light palette", () => {
+    expect(colorToken("accent")).toBe("#5b5bd6");
+    expect(colorToken("action")).toBe("#5b5bd6");
+    expect(colorToken("action-border")).toBe("#5b5bd6");
+    expect(colorToken("action-hover")).toBe("#4b4bc0");
     expect(colorToken("on-action")).toBe("#ffffff");
+    expect(rule(".dsh-top100")).toContain("color-scheme: light");
+    expect(colorToken("surface")).toBe("#ffffff");
+    expect(css).not.toContain("[data-ds-dark-theme]");
   });
 
   it("gives search and installation buttons the same typography and action colors", () => {

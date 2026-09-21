@@ -1,6 +1,6 @@
 import { type InstalledEntryEvidence } from "../install/install-spec.js";
 import type { CatalogCacheStatus, CatalogCategoryDefinition, CatalogItem, CatalogScope, CatalogScopeCounts, InstallAvailability, PluginCategoryDefinition, RankingEntry, RankingsDocument, RankingView, PluginCategoryId } from "../shared/types.js";
-export declare const DEFAULT_DATA_URL = "https://www.dsheval.ai/data";
+export declare const DEFAULT_DATA_URL = "https://www.evaldock.ai/data";
 export interface CatalogCache {
     dataUrl: string;
     fetchedAt: number;
