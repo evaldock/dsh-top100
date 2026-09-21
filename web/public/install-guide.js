@@ -14,7 +14,7 @@ export function existingDshCommands(method, version, pluginVersion) {
   const prefix = existingDshPrefix(method, version);
   if (!prefix) return null;
   return {
-    install: `${prefix} plugin --profile web add @dsheval/dsh-top100-plugin@${pluginVersion}`,
+    install: `${prefix} plugin --profile web add @evaldock/dsh-top100-plugin@${pluginVersion}`,
     check: `${prefix} plugin --profile web list --depth 0`,
     start: `${prefix} web`,
   };

@@ -20,7 +20,7 @@ test("both READMEs introduce the same product and link to the installation guide
 });
 
 test("quick starts use the same DSH launcher and retain scope and safety boundaries", () => {
-  const commands = `npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web add @dsheval/dsh-top100-plugin@${pluginPackage.version}\nnpx @deepseek-ai/dsh@0.1.5-rc.2 web`;
+  const commands = `npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web add @evaldock/dsh-top100-plugin@${pluginPackage.version}\nnpx @deepseek-ai/dsh@0.1.5-rc.2 web`;
   for (const readme of [githubReadme, npmReadme]) {
     assert.ok(readme.includes(commands));
     assert.match(readme, /Node\.js 24 LTS/);

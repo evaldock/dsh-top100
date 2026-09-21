@@ -75,10 +75,10 @@ test("local preview serves the Top100 mount and preserves old page queries", asy
   assert.equal(missing.status, 404);
 });
 
-test("public catalog and plugin defaults use EvalDock while the npm identity stays compatible", async () => {
+test("public catalog and plugin defaults use EvalDock with the new npm scope", async () => {
   const read = async (path) => readFile(new URL(path, repo), "utf8");
   const pkg = JSON.parse(await read("plugin/package.json"));
-  assert.equal(pkg.name, "@dsheval/dsh-top100-plugin");
+  assert.equal(pkg.name, "@evaldock/dsh-top100-plugin");
   assert.equal(pkg.homepage, "https://www.evaldock.ai/top100/");
   const host = await read("plugin/src/host/catalog.ts");
   assert.ok(host.includes('DEFAULT_DATA_URL = "https://www.evaldock.ai/data"'));

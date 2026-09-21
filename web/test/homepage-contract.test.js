@@ -340,7 +340,7 @@ test("keeps displayed commands equal to copied commands and pins the beginner DS
   for (const command of [
     "node --version\nnpm --version\npnpm --version",
     "npm install -g pnpm@11.24.0",
-    `npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web add @dsheval/dsh-top100-plugin@${packageJson.version}`,
+    `npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web add @evaldock/dsh-top100-plugin@${packageJson.version}`,
     "npx @deepseek-ai/dsh@0.1.5-rc.2 web",
     "npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web list --depth 0",
   ]) assert.ok(commands.includes(command), `missing copyable command: ${command}`);
@@ -438,9 +438,9 @@ test("keeps ranking rows subtly banded and clamps long plugin names", () => {
   assert.match(html, />安装 Top100 到 DSH<\/a>/);
   assert.doesNotMatch(html, /hero-release-version/);
   assert.doesNotMatch(html, /class="release-band"/);
-  assert.ok(html.includes(`data-copy-command="npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web add @dsheval/dsh-top100-plugin@${packageJson.version}"`));
-  assert.ok(dsh.includes(`@dsheval/dsh-top100-plugin/v/${packageJson.version}`));
-  assert.match(dsh, /npx @deepseek-ai\/dsh@0\.1\.5-rc\.2 plugin --profile web add @dsheval\/dsh-top100-plugin/);
+  assert.ok(html.includes(`data-copy-command="npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web add @evaldock/dsh-top100-plugin@${packageJson.version}"`));
+  assert.ok(dsh.includes(`@evaldock/dsh-top100-plugin/v/${packageJson.version}`));
+  assert.match(dsh, /npx @deepseek-ai\/dsh@0\.1\.5-rc\.2 plugin --profile web add @evaldock\/dsh-top100-plugin/);
   assert.match(html, /\.plugin-name-text \{[\s\S]*?-webkit-line-clamp: 2/);
   assert.match(html, /\.plugin-name \{[\s\S]*?line-height: 1\.14/);
   assert.match(html, /\.plugin-name-text \{[\s\S]*?padding-bottom: 0\.08em/);

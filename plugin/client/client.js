@@ -1,4 +1,4 @@
-window.__ModuleLoader__.load({ id: "@dsheval/dsh-top100-plugin", factory: (require) => {
+window.__ModuleLoader__.load({ id: "@evaldock/dsh-top100-plugin", factory: (require) => {
 var module = { exports: {} }; var exports = module.exports;
 let react = require("react");
 let react_jsx_runtime = require("react/jsx-runtime");
@@ -2268,7 +2268,7 @@ function ManagedPage({ t, tracking, retryUpdate, onRetryConsumed, initialQuery =
 	const hasUpdateSettings = data?.items.some((item) => item.kind === "bundle" && !item.protected && !item.local) ?? false;
 	const updates = data?.items.filter((item) => item.kind === "bundle" && !item.protected && !item.local && (updateStrategy === "latest" || item.updateAvailable || !item.latest)) ?? [];
 	function descriptionFor$1(item) {
-		if (item.name === "@dsheval/dsh-top100-plugin") return t("managedSelfDescription");
+		if (["@dsheval/dsh-top100-plugin", "@evaldock/dsh-top100-plugin"].includes(item.name)) return t("managedSelfDescription");
 		if (t("descriptionLocale") === "en") return item.description.trim() || `${t(item.kind === "skill" ? "installedSkillFallback" : "installedPluginFallback")}: ${item.name}.`;
 		const supplied = item.descriptionZh.trim();
 		if (supplied) return supplied;
@@ -2490,7 +2490,7 @@ function ManagedPage({ t, tracking, retryUpdate, onRetryConsumed, initialQuery =
 				children: [(data?.items ?? []).map((item) => {
 					const job = jobByName.get(item.name);
 					const shortName = item.name.replace(/^@[^/]+\//, "");
-					const displayName = item.name === "@dsheval/dsh-top100-plugin" ? "dsh-top100" : data?.items.some((other) => other.name !== item.name && other.name.replace(/^@[^/]+\//, "") === shortName) ? item.name : shortName;
+					const displayName = ["@dsheval/dsh-top100-plugin", "@evaldock/dsh-top100-plugin"].includes(item.name) ? "dsh-top100" : data?.items.some((other) => other.name !== item.name && other.name.replace(/^@[^/]+\//, "") === shortName) ? item.name : shortName;
 					const versionsKnown = Boolean(item.version && item.latest && parseSemver(item.version.replace(/^v/, "")) && parseSemver(item.latest.replace(/^v/, "")));
 					const noUpdate = updateStrategy === "preserve" && versionsKnown && !item.updateAvailable;
 					return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("article", { children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("details", {
@@ -6712,7 +6712,7 @@ function apply(ctx) {
 		const settings = scoped.settingsScope.bind({ namespace: NS });
 		scoped.slots.inject("plugins.bundle.config", () => scoped.slots.register({
 			name: "plugins.bundle.config",
-			key: "@dsheval/dsh-top100-plugin",
+			key: "@evaldock/dsh-top100-plugin",
 			locale: NS,
 			inject: () => ({ t })
 		}, () => (0, react.createElement)(PluginErrorBoundary, {

@@ -46,7 +46,7 @@
 
     <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace">
       <text x="778" y="193" fill="#66716d" font-size="12" font-weight="800" letter-spacing="1">NPM</text>
-      <text x="778" y="222" fill="#17211f" font-size="21" font-weight="800">v1.3.10</text>
+      <text x="778" y="222" fill="#17211f" font-size="21" font-weight="800">v1.3.11</text>
       <line x1="778" y1="247" x2="1100" y2="247" stroke="#b8c9c5"/>
 
       <text x="778" y="280" fill="#66716d" font-size="12" font-weight="800" letter-spacing="1">DSH WEB</text>
@@ -60,7 +60,7 @@
     <rect x="770" y="427" width="338" height="78" fill="#eef2f1" stroke="#b8c9c5"/>
     <text x="790" y="451" fill="#17211f" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" font-weight="700">npx @deepseek-ai/dsh plugin</text>
     <text x="790" y="473" fill="#17211f" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" font-weight="700">--profile web add</text>
-    <text x="790" y="495" fill="#17211f" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" font-weight="700">@dsheval/dsh-top100-plugin</text>
+    <text x="790" y="495" fill="#17211f" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" font-weight="700">@evaldock/dsh-top100-plugin</text>
   </g>
 
   <text x="78" y="582" fill="#66716d" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14" font-weight="700" letter-spacing="1">WWW.DSHEVAL.AI  /  OPEN DATA  /  TOP 100 · RISING · CATEGORIES</text>

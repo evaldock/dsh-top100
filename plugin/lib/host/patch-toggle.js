@@ -4,7 +4,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { dirname, join } from "node:path";
 import { INBOX_BUNDLES, profileDir } from "./profile.js";
 import { applyDshPatches, disabledRowIds, insertedRows, readDshPatch, writeDshPatch } from "./dsh-patch.js";
-const SELF_PACKAGES = new Set(["dsh-top100", "dsh-top100-plugin", "@dsheval/dsh-top100-plugin"]);
+const SELF_PACKAGES = new Set(["dsh-top100", "dsh-top100-plugin", "@dsheval/dsh-top100-plugin", "@evaldock/dsh-top100-plugin"]);
 export function userPatchPath(profile, explicitDir) {
     return join(profileDir(profile, explicitDir), "cordis.patch.yml");
 }

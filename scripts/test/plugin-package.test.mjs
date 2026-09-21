@@ -3,14 +3,14 @@ import { test } from 'node:test';
 import { validatePluginPackage } from '../check-plugin-package.mjs';
 
 function fixture() {
-  const manifest = { name: '@dsheval/dsh-top100-plugin', version: '1.0.0', main: 'lib/index.js', types: 'lib/index.d.ts',
+  const manifest = { name: '@evaldock/dsh-top100-plugin', version: '1.0.0', main: 'lib/index.js', types: 'lib/index.d.ts',
     exports: { '.': { types: './lib/index.d.ts', default: './lib/index.js' }, './client': './client/client.js' },
     dsh: { bundle: { patch: './cordis.patch.yml' } } };
   const sourceFiles = { 'cordis.patch.yml': '- insert: []\n', 'skills/recommend/SKILL.md': '# Recommendation\n',
     'skills/recommend/agents/openai.yaml': 'display_name: Recommendation\n' };
   const contents = { ...sourceFiles, 'package.json': JSON.stringify(manifest), 'lib/index.js': 'export const name = "top100";',
     'lib/index.d.ts': 'export declare const name: string;',
-    'client/client.js': 'window.__ModuleLoader__.load({ id: "@dsheval/dsh-top100-plugin", factory: () => ({}) });' };
+    'client/client.js': 'window.__ModuleLoader__.load({ id: "@evaldock/dsh-top100-plugin", factory: () => ({}) });' };
   return { manifest, expectedManifest: structuredClone(manifest), sourceFiles, files: Object.keys(contents), readFile: path => contents[path], contents };
 }
 

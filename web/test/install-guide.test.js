@@ -9,7 +9,7 @@ test("existing DSH commands keep the chosen launcher and exact version", () => {
     ["npx", "0.1.1-rc.2", "npx @deepseek-ai/dsh@0.1.1-rc.2"],
   ]) {
     assert.deepEqual(existingDshCommands(method, version, "1.3.2"), {
-      install: `${prefix} plugin --profile web add @dsheval/dsh-top100-plugin@1.3.2`,
+      install: `${prefix} plugin --profile web add @evaldock/dsh-top100-plugin@1.3.2`,
       check: `${prefix} plugin --profile web list --depth 0`,
       start: `${prefix} web`,
     });

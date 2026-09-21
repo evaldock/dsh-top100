@@ -14,12 +14,12 @@ for (const file of files) {
   // Only current install instructions and release labels; historical compatibility
   // references and DSH's own version requirements must remain unchanged.
   let after = before.replace(
-    new RegExp(`(--profile web add(?: -w)? @dsheval/dsh-top100-plugin)(?:@${semver})?(?=[\\s<"'\x60]|$)`, "g"),
+    new RegExp(`(--profile web add(?: -w)? @evaldock/dsh-top100-plugin)(?:@${semver})?(?=[\\s<"'\x60]|$)`, "g"),
     (_, prefix) => `${prefix}@${version}`,
   );
   for (const prefix of [
-    "- '@dsheval/dsh-top100-plugin@",
-    "@dsheval/dsh-top100-plugin/v/",
+    "- '@evaldock/dsh-top100-plugin@",
+    "@evaldock/dsh-top100-plugin/v/",
     "releases/tag/v",
     "正式版本 v",
     '"softwareVersion": "',

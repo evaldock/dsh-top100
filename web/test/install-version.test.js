@@ -28,15 +28,15 @@ test("a release bump fails the check until all install surfaces are synchronized
     assert.equal(run("--check").status, 0);
     for (const file of files) {
       const content = await readFile(join(directory, file), "utf8");
-      const targets = [...content.matchAll(/--profile web add(?: -w)? (@dsheval\/dsh-top100-plugin[^\s<"'`]+)/g)];
+      const targets = [...content.matchAll(/--profile web add(?: -w)? (@evaldock\/dsh-top100-plugin[^\s<"'`]+)/g)];
       assert.ok(targets.length, file);
-      assert.ok(targets.every(([, target]) => target === "@dsheval/dsh-top100-plugin@9.8.7"), file);
+      assert.ok(targets.every(([, target]) => target === "@evaldock/dsh-top100-plugin@9.8.7"), file);
       if (file.endsWith("README.md")) {
         assert.match(content, /DSH Web 0\.1\.5-rc\.2/, "existing README compatibility notes must not change");
       } else {
         assert.match(content, /npx @deepseek-ai\/dsh@0\.1\.5-rc\.2/, "a Top100 release bump must preserve the tested DSH version");
       }
-      if (file.endsWith("README.md")) assert.ok(content.includes("- '@dsheval/dsh-top100-plugin@9.8.7'"));
+      if (file.endsWith("README.md")) assert.ok(content.includes("- '@evaldock/dsh-top100-plugin@9.8.7'"));
     }
     const readme = await readFile(join(directory, "README.md"), "utf8");
     assert.ok(readme.includes("release-v9.8.7-2f6f68?style=flat-square"), "badge color is not a prerelease suffix");

@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 import { INBOX_BUNDLES, profileDir } from "./profile.js";
 import { applyDshPatches, disabledRowIds, insertedRows, readDshPatch, writeDshPatch, type DshPatch } from "./dsh-patch.js";
 
-const SELF_PACKAGES = new Set(["dsh-top100", "dsh-top100-plugin", "@dsheval/dsh-top100-plugin"]);
+const SELF_PACKAGES = new Set(["dsh-top100", "dsh-top100-plugin", "@dsheval/dsh-top100-plugin", "@evaldock/dsh-top100-plugin"]);
 export interface PatchState { disables: string[]; forced: string[] }
 export function userPatchPath(profile: string, explicitDir?: string): string {
   return join(profileDir(profile, explicitDir), "cordis.patch.yml");

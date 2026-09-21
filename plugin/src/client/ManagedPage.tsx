@@ -180,7 +180,7 @@ export function ManagedPage({ t, tracking, retryUpdate, onRetryConsumed, initial
     && (updateStrategy === "latest" || item.updateAvailable || !item.latest)) ?? [];
 
   function descriptionFor(item: ManagedPlugin): string {
-    if (item.name === "@dsheval/dsh-top100-plugin") return t("managedSelfDescription");
+    if (["@dsheval/dsh-top100-plugin", "@evaldock/dsh-top100-plugin"].includes(item.name)) return t("managedSelfDescription");
     if (t("descriptionLocale") === "en") return item.description.trim() || `${t(item.kind === "skill" ? "installedSkillFallback" : "installedPluginFallback")}: ${item.name}.`;
     const supplied = item.descriptionZh.trim();
     if (supplied) return supplied;
@@ -239,7 +239,7 @@ export function ManagedPage({ t, tracking, retryUpdate, onRetryConsumed, initial
         {(data?.items ?? []).map((item) => {
           const job = jobByName.get(item.name);
           const shortName = item.name.replace(/^@[^/]+\//, "");
-          const displayName = item.name === "@dsheval/dsh-top100-plugin" ? "dsh-top100"
+          const displayName = ["@dsheval/dsh-top100-plugin", "@evaldock/dsh-top100-plugin"].includes(item.name) ? "dsh-top100"
             : data?.items.some((other) => other.name !== item.name && other.name.replace(/^@[^/]+\//, "") === shortName) ? item.name : shortName;
           const versionsKnown = Boolean(item.version && item.latest
             && parseSemver(item.version.replace(/^v/, "")) && parseSemver(item.latest.replace(/^v/, "")));

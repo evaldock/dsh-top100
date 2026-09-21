@@ -73,7 +73,7 @@ export function apply(ctx: ClientContext): void {
       scoped.slots.register(
         {
           name: "plugins.bundle.config",
-          key: "@dsheval/dsh-top100-plugin",
+          key: "@evaldock/dsh-top100-plugin",
           locale: NS,
           inject: () => ({ t }),
         },
