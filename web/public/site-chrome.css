@@ -414,18 +414,66 @@
 .dsh-footer-inner { padding-block: 42px; flex-wrap: wrap; }
 :is(main#top, main) .discovery-scope { margin: 14px 0 0; max-width: 650px; }
 .discovery-scope a { color: var(--accent); text-underline-offset: 3px; }
-.install-console { background: var(--card); box-shadow: none; border-color: var(--line); }
+.install-console {
+  background: var(--card);
+  border-color: #d5d5ef;
+  border-top: 3px solid var(--accent);
+  box-shadow: 8px 8px 0 #d5d5ef;
+}
+.install-console::before { display: none; }
+.hero .install-console {
+  --code-surface: #f0f1fe;
+  --code-ink: #272962;
+  --line: #d5d5ef;
+}
+.hero .hero-command-row { border-color: #d5d5ef; }
+/* Match the homepage's violet emphasis and leave more room around the title. */
+.hero { --site-home-title-size: clamp(48px, 5.3vw, 76px); }
+.hero :is(.hero-copy, .hero-summary) > h1 {
+  font-size: var(--site-home-title-size);
+  line-height: 1.12;
+}
+.hero h1 > span:last-child { color: var(--hero-accent); }
+.hero .hero-inner { gap: clamp(40px, 5vw, 72px); }
+#ranking :is(.section-header, .directory-head) h2 {
+  font-family: var(--site-ui-font);
+  font-size: clamp(28px, 3vw, 36px);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -.02em;
+}
+/* Ranking introductions sit between body copy and small metadata. */
+#ranking :is(.section-header, .directory-head) {
+  --site-copy-note-size: 15px;
+  margin-bottom: 24px;
+}
+#ranking :is(.ranking-meta, .directory-head .updated) {
+  color: var(--muted);
+  font: 400 13px/1.6 var(--site-ui-font);
+  letter-spacing: normal;
+  padding-bottom: 0;
+}
+@media (max-width: 980px) {
+  #ranking :is(.section-header, .directory-head) { display: block; }
+  #ranking :is(.ranking-meta, .directory-head .updated) {
+    min-width: 0;
+    margin-top: 12px;
+    text-align: left;
+  }
+}
 @media (max-width: 720px) {
+  .hero { --site-home-title-size: clamp(32px, 10.5vw, 54px); }
+  .install-console { box-shadow: 5px 5px 0 #d5d5ef; }
   .dsh-site-container { width: calc(100% - 40px); }
   .dsh-brand { --brand-width: 144px; }
   .dsh-footer-inner { padding-block: 28px; }
 }
 
-/* Keep discovery surfaces neutral; reserve brand color for actions and selection. */
+/* Cool white reading surfaces, with violet marking structure and selection. */
 #ranking {
   --line: rgba(28, 32, 36, .16);
   --site-control-line: rgba(28, 32, 36, .2);
-  --site-control-soft: #f8f8fc;
+  --site-control-soft: #f0f1fe;
 }
 #ranking.directory { background: #fff; }
 #ranking :is(.featured-plugin, .featured-skill) {
@@ -434,7 +482,7 @@
 }
 :is(main#top, main) #ranking .category-option[aria-pressed="true"] {
   color: var(--accent);
-  background: #fff;
+  background: var(--site-control-soft);
   box-shadow: inset 0 -3px var(--accent);
 }
 main #ranking .trust-pill,
@@ -444,8 +492,22 @@ main #ranking .trust-pill[data-level] {
   background: #fff;
 }
 
-/* Plain table headings keep the brand accent on interactive controls. */
+/* Keep table surfaces light and metrics within the main brand palette. */
 #ranking :is(.list-head, .skill-list-head) {
-  background: #fff;
+  color: #272962;
+  background: #f0f1fe;
   box-shadow: none;
 }
+#ranking :is(.plugin-list.is-top100-list .plugin:nth-child(even), .skill-card:nth-child(even)) {
+  background: #f8f8ff;
+}
+#ranking :is(.plugin-list.is-top100-list .plugin, .skill-card):is(:hover, :focus-within) {
+  background: #f0f1fe;
+}
+#ranking :is(.plugin, .skill-card) .stars {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: none;
+  transform: none;
+}
+#ranking .stars::after { display: none; }

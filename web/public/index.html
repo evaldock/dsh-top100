@@ -49,6 +49,7 @@
     </script>
     <title>插件榜单 · Top100 · EvalDock</title>
     <link rel="stylesheet" href="./install-console.css" />
+    <link rel="stylesheet" href="./data-freshness.css" />
     <link rel="stylesheet" href="./catalog-install-command.css" />
     <link rel="stylesheet" href="./fonts.css?v=20260919-evaldock1" />
     <style>
@@ -2718,7 +2719,7 @@
 
       .ranking-explainer {
         max-width: 680px;
-        margin: 18px 0 0;
+        margin: 0;
         color: var(--muted);
         font-size: 14px;
         line-height: 1.7;
@@ -3072,7 +3073,7 @@
     <link rel="stylesheet" href="./ranking-method.css?v=20260919-evaldock1" />
     <link rel="stylesheet" href="./ranking-rows.css" />
     <link rel="stylesheet" href="./site-controls.css?v=20260919-evaldock1" />
-    <link rel="stylesheet" href="./site-chrome.css?v=20260919-evaldock5" />
+    <link rel="stylesheet" href="./site-chrome.css?v=20260921-violet4" />
   </head>
   <body>
     <header class="dsh-site-header dsh-nav-emphasis">
@@ -3169,15 +3170,15 @@
           <div class="content-view" id="leaderboard-view">
           <header class="section-header">
             <div>
-              <p class="section-kicker" data-site-label="section" lang="en">Discover · Compare · Install</p>
-              <h2>按热度发现，<br />按需求选择</h2>
-              <p class="ranking-explainer" data-site-copy="body">热度榜综合近7日增长与累计 Stars；新锐榜比较按规模修正的近3日增长。Stars 属于整个 GitHub 仓库，不代表具体插件的使用量。</p>
+              <h2 class="sr-only">插件榜单</h2>
+              <p class="ranking-explainer" data-site-copy="note">热度榜综合近7日增长与累计 Stars；新锐榜比较按规模修正的近3日增长。Stars 属于整个 GitHub 仓库，不代表具体插件的使用量。</p>
             </div>
             <div class="ranking-meta" aria-live="polite">
-              <p id="ranking-meta-title">DEEPSEEK HARNESS PLUGINS · TOP 100</p>
               <p class="ranking-updated" id="ranking-updated">更新于：加载中</p>
             </div>
           </header>
+
+          <p class="data-freshness" id="data-freshness" role="status" hidden></p>
 
           <div class="ranking-tools">
             <div class="view-tabs" role="tablist" aria-label="插件排序方式">
@@ -3388,6 +3389,7 @@
       } from "./search-engine.js";
       import { catalogPresentation, catalogInstallCapability, installCommand } from "./catalog-presentation.js";
       import { filterDiscoveryEntries, requiresSearchIndex } from "./discovery-filter.js";
+      import { renderDataFreshness } from "./data-freshness.js";
       import { enhanceDescriptions } from "./description-preview.js";
       import { initializeInstallGuide } from "./install-guide.js";
       import { chooseCatalogInstallCommand } from "./catalog-install-command.js";
@@ -3421,7 +3423,6 @@
       const listHead = document.querySelector("#list-head");
       const rankHead = document.querySelector("#rank-head");
       const metricHead = document.querySelector("#metric-head");
-      const rankingMetaTitle = document.querySelector("#ranking-meta-title");
       const rankingUpdated = document.querySelector("#ranking-updated");
       const heroSearchForm = document.querySelector("#hero-search-form");
       const heroSearchInput = document.querySelector("#hero-search");
@@ -4026,6 +4027,7 @@
 
           updateAllCount();
           updateCategoryCounts();
+          renderDataFreshness(document.querySelector("#data-freshness"), manifest);
           return;
         } catch (manifestError) {
           if (manifest || manifestError.status !== 404) throw manifestError;
@@ -4042,6 +4044,7 @@
 
         allCount.textContent = "";
         updateCategoryCounts();
+        renderDataFreshness(document.querySelector("#data-freshness"), data);
       }
 
       async function ensureViewData(view) {
@@ -4253,14 +4256,6 @@
           : currentView === "rising"
             ? "新锐指数"
             : "GitHub Stars";
-        const metaLabels = {
-          top100: "DEEPSEEK HARNESS PLUGINS · TOP 100",
-          rising: "DEEPSEEK HARNESS PLUGINS · 新锐榜",
-          all: "DEEPSEEK HARNESS PLUGINS · 总榜",
-        };
-        rankingMetaTitle.textContent = activeCategory
-          ? `${metaLabels[currentView]} · ${categoryLabels[activeCategory]}`
-          : metaLabels[currentView];
         rankingUpdated.textContent = `更新于：${formatUpdateTime(generatedAt)}`;
         updateSearchControls();
         for (const button of categoryButtons) {
@@ -4353,7 +4348,6 @@
         const indexed = requiresSearchIndex(currentView, state.query, installableOnly);
         list.classList.toggle("is-top100-list", currentView !== "all" && !searchActive);
         listHead.hidden = currentView === "all" || searchActive;
-        if (searchActive) rankingMetaTitle.textContent = `全部 DSH 插件 · 搜索结果${activeCategory ? ` · ${categoryLabels[activeCategory]}` : ""}`;
         loadMore.disabled = !indexed && (
           currentView === "all" && (
             activeCategory
@@ -4821,6 +4815,7 @@
         retry.addEventListener("click", () => window.location.reload());
         status.append(message, retry);
         list.replaceChildren(status);
+        renderDataFreshness(document.querySelector("#data-freshness"), null);
         searchResult.textContent = "数据加载失败";
         console.error(error);
       }

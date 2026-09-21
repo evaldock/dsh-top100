@@ -2,13 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
+import { renderDataFreshness } from '../public/data-freshness.js';
 function section(html,start,end) {
   const a=html.indexOf(start),b=html.indexOf(end,a);
   assert(a>=0 && b>a); return html.slice(a,b);
 }
 const html=readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
 function page(fetchJson) {
-  const context=vm.createContext({fetchJson,manifest:null,MANIFEST_URL:'/manifest.json',
+  const context=vm.createContext({fetchJson,manifest:null,renderDataFreshness,document:{querySelector:()=>({})},MANIFEST_URL:'/manifest.json',
     LEGACY_URLS:{hot:'/legacy-hot.json',search:'/legacy-search.json'},
     generatedAt:null,skillsCount:{},allCount:{},formatStars:String,makeEntries:rows=>rows,
     updateAllCount(){},updateCategoryCounts(){},console:{warn(){}},

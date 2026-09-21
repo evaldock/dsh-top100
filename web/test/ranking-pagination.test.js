@@ -95,7 +95,7 @@ function createPage(category = null) {
     },
   };
   for (const key of ["featuredPlugin", "searchInput", "list", "listHead", "loadMore",
-    "rankingMetaTitle", "rankHead", "searchClear", "searchSort", "searchResult",
+    "rankHead", "searchClear", "searchSort", "searchResult",
     "rankingStatus", "installableToggle"]) page[key] = new Element();
   page.template = { content: new Element() };
   const allCategoryButton = new Element();

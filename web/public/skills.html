@@ -12,6 +12,7 @@
     <link rel="icon" href="./assets/evaldock-favicon.png?v=20260919-pony1" type="image/png" sizes="32x32" />
     <link rel="apple-touch-icon" href="./assets/evaldock-apple-touch-icon.png?v=20260919-pony1" sizes="180x180" />
     <link rel="stylesheet" href="./install-console.css" />
+    <link rel="stylesheet" href="./data-freshness.css" />
     <link rel="stylesheet" href="./fonts.css?v=20260919-evaldock1" />
     <style>
       :root {
@@ -102,7 +103,7 @@
         margin-bottom: 34px;
       }
       .directory-head h2 { max-width: 850px; margin: 0; font: 500 clamp(42px, 5.7vw, 78px)/0.94 var(--serif); letter-spacing: -0.055em; }
-      .directory-head p { max-width: 680px; margin: 18px 0 0; color: var(--muted); font-size: 14px; font-weight: 400; line-height: 1.7; }
+      .directory-head p { max-width: 680px; margin: 0; color: var(--muted); font-size: 14px; font-weight: 400; line-height: 1.7; }
       .directory-head .updated { min-width: 300px; margin: 0; padding-bottom: 5px; color: var(--ink); text-align: right; font: 800 13px/1.7 var(--mono); letter-spacing: 0.03em; }
 
       .controls {
@@ -266,7 +267,7 @@
     <link rel="stylesheet" href="./category-system.css?v=20260919-evaldock1" />
     <link rel="stylesheet" href="./ranking-rows.css" />
     <link rel="stylesheet" href="./site-controls.css?v=20260919-evaldock1" />
-    <link rel="stylesheet" href="./site-chrome.css?v=20260919-evaldock5" />
+    <link rel="stylesheet" href="./site-chrome.css?v=20260921-violet4" />
   </head>
   <body>
     <header class="dsh-site-header dsh-nav-emphasis">
@@ -328,9 +329,10 @@
 
       <section class="directory" id="ranking" aria-labelledby="directory-title">
         <header class="directory-head">
-          <div><h2 id="directory-title">Skills 榜单</h2><p data-site-copy="body">按 GitHub Stars 排序，支持搜索和分类筛选。Skills 独立展示，不参与插件 Top 100。</p></div>
+          <div><h2 id="directory-title" class="dsh-visually-hidden">Skills 榜单</h2><p data-site-copy="note">按 GitHub Stars 排序；Skills 独立成榜，不参与插件 Top 100。</p></div>
           <p class="updated" id="updated">更新于：加载中</p>
         </header>
+        <p class="data-freshness" id="data-freshness" role="status" hidden></p>
         <div class="category-panel" id="skill-category-filter-panel">
           <div class="category-options" id="skill-category-options" role="group" aria-label="Skill 分类"></div>
           <div class="category-description-stage">
@@ -392,6 +394,7 @@
 
     <script type="module">
       import "./install-card-copy.js";
+      import { renderDataFreshness } from "./data-freshness.js";
       import { enhanceDescriptions } from "./description-preview.js";
       import { descriptionFor, descriptionDisplayFor } from "./description-presentation.js";
       import { normalizeSearchText, scoreSearchEntry } from "./search-engine.js";
@@ -572,11 +575,13 @@
       async function load() {
         let payload;
         let manifest;
+        let snapshotMetadata;
         try {
           manifest = await fetchJson(MANIFEST_URL, { cache: "no-cache" });
           const skillsUrl = manifest?.datasets?.skills?.url;
           if (!skillsUrl) throw new Error("manifest does not publish a Skills directory");
           payload = await fetchJson(skillsUrl);
+          snapshotMetadata = manifest;
           updated.textContent = `更新于：${formatTime(payload.generatedAt || manifest.generatedAt)}`;
         } catch (manifestError) {
           if (manifest?.datasets?.skills?.url || !manifest && manifestError.status !== 404) throw manifestError;
@@ -590,6 +595,7 @@
               rankings: legacy?.rankings?.total ?? legacy?.rankings ?? [],
             };
           }
+          snapshotMetadata = payload;
           updated.textContent = `更新于：${formatTime(payload.generatedAt)}`;
         }
         entries = (Array.isArray(payload.rankings) ? payload.rankings : [])
@@ -597,6 +603,7 @@
           .map((entry) => ({ ...entry, descriptionZh: descriptionFor(entry) }));
         updateCategoryControls();
         render();
+        renderDataFreshness(document.querySelector("#data-freshness"), snapshotMetadata);
       }
 
       search.addEventListener("input", render);
@@ -619,6 +626,7 @@
       }
       load().catch((error) => {
         console.error(error);
+        renderDataFreshness(document.querySelector("#data-freshness"), null);
         status.textContent = "Skills 目录暂时无法读取，请稍后重试。";
         const empty = document.createElement("p");
         empty.className = "empty";

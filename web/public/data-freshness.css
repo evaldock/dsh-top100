@@ -1,0 +1,11 @@
+.data-freshness {
+  margin: 0 0 20px;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  color: var(--ink);
+  background: var(--paper);
+  font: 500 13px/1.7 var(--sans);
+  overflow-wrap: anywhere;
+}
+.data-freshness[hidden] { display: none; }
