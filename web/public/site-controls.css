@@ -148,7 +148,7 @@
   width: 100%;
   min-height: 52px;
   margin: 0;
-  padding: 0 max(24px, calc((100% - 1240px) / 2));
+  padding: 0 max(32px, calc((100% - 1200px) / 2));
   border-bottom: 1px solid rgba(28, 32, 36, .12);
   background: #f8f8ff;
   font-family: var(--site-ui-font);

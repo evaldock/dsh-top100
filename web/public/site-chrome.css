@@ -1,4 +1,4 @@
-/* EvalDock shell and Top100 reading roles. Synced with the main site on 2026-09-19.
+/* EvalDock shell and Top100 reading roles. Navigation synced on 2026-09-22.
    Assets are served locally so each website can be deployed independently. */
 :root {
   --site-header-height: 64px;
@@ -410,6 +410,50 @@
 .dsh-brand-wordmark img { transform: translateX(-28%); }
 .dsh-nav-emphasis .dsh-desktop-nav { margin-left: auto; }
 .dsh-nav-emphasis .dsh-desktop-nav a { letter-spacing: .045em; }
+/* Current main-site header geometry and grouped navigation. */
+.dsh-site-header .dsh-site-container { width: min(1200px, calc(100% - 64px)); }
+.dsh-nav-root { position: relative; }
+.dsh-nav-heading { display: flex; align-items: center; }
+.dsh-site-header .dsh-nav-heading .dsh-nav-label { padding-right: 2px; }
+.dsh-nav-toggle {
+  display: grid; place-items: center; flex: none; width: 32px; height: 44px;
+  padding: 0; border: 0; background: transparent; color: var(--dsh-muted); cursor: pointer;
+}
+.dsh-nav-toggle:hover, .dsh-nav-root[data-active='true'] .dsh-nav-toggle,
+.dsh-site-header .dsh-nav-root[data-active='true'] .dsh-nav-label { color: var(--dsh-accent); }
+.dsh-nav-toggle:focus-visible { outline: 2px solid var(--dsh-accent); outline-offset: -4px; }
+.dsh-nav-toggle[aria-expanded='true'] svg { transform: rotate(180deg); }
+/* Keep the desktop disclosure close to its label. */
+.dsh-nav-root[data-mobile='false'] .dsh-nav-heading { padding: 0 8px 0 16px; }
+.dsh-site-header .dsh-nav-root[data-mobile='false'] .dsh-nav-label { padding-inline: 0; }
+.dsh-nav-root[data-mobile='false'] .dsh-nav-toggle { width: 24px; padding-left: 4px; justify-items: start; }
+@media (min-width: 761px) and (max-width: 900px) {
+  .dsh-nav-root[data-mobile='false'] .dsh-nav-heading { padding-left: 10px; }
+}
+.dsh-nav-panel { position: absolute; top: 100%; left: 0; z-index: 1; min-width: 180px; padding-top: 8px; }
+.dsh-nav-panel[hidden] { display: none; }
+.dsh-nav-links {
+  padding: 6px; border: 1px solid var(--dsh-line); border-radius: 6px;
+  background: var(--dsh-paper); box-shadow: 0 12px 28px rgba(28, 32, 36, .1);
+}
+.dsh-site-header .dsh-nav-panel .dsh-nav-links a {
+  display: flex; min-height: 44px; padding: 10px 14px; border-radius: 3px;
+  font-size: 14px; letter-spacing: 0; box-shadow: none;
+}
+.dsh-site-header .dsh-nav-panel a::after { display: none; }
+.dsh-site-header .dsh-nav-panel a:hover,
+.dsh-site-header .dsh-nav-panel a[aria-current='page'] { color: var(--dsh-accent); background: #ebebfa; }
+.dsh-nav-root[data-mobile='true'] .dsh-nav-heading { justify-content: space-between; }
+.dsh-site-header .dsh-nav-root[data-mobile='true'] .dsh-nav-label { flex: 1; }
+.dsh-nav-root[data-mobile='true'] .dsh-nav-toggle { width: 48px; height: 48px; }
+.dsh-nav-root[data-mobile='true'] .dsh-nav-panel { position: static; padding: 0 0 8px 12px; }
+.dsh-nav-root[data-mobile='true'] .dsh-nav-links {
+  padding: 0 0 0 10px; border: 0; border-left: 1px solid var(--dsh-line); border-radius: 0; box-shadow: none;
+}
+.dsh-mobile-menu > nav { max-height: calc(100dvh - var(--site-header-height)); overflow-y: auto; }
+@media (max-width: 720px) {
+  .dsh-site-header .dsh-site-container { width: calc(100% - 40px); }
+}
 .dsh-site-footer { border-top-color: #d5d5dd; }
 .dsh-footer-inner { padding-block: 42px; flex-wrap: wrap; }
 :is(main#top, main) .discovery-scope { margin: 14px 0 0; max-width: 650px; }
