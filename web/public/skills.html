@@ -266,20 +266,120 @@
     </style>
     <link rel="stylesheet" href="./category-system.css?v=20260919-evaldock1" />
     <link rel="stylesheet" href="./ranking-rows.css" />
-    <link rel="stylesheet" href="./site-controls.css?v=20260919-evaldock1" />
-    <link rel="stylesheet" href="./site-chrome.css?v=20260921-violet4" />
+    <link rel="stylesheet" href="./site-controls.css?v=20260922-nav1" />
+    <link rel="stylesheet" href="./site-chrome.css?v=20260922-nav5" />
+    <script src="./site-navigation.js?v=20260922-nav1" defer></script>
   </head>
   <body>
     <header class="dsh-site-header dsh-nav-emphasis">
       <div class="dsh-site-container dsh-header-inner">
-        <a class="dsh-brand-link" href="/" aria-label="EvalDock 首页"><span class="dsh-brand" translate="no"><span class="dsh-brand-symbol" aria-hidden="true"><img src="./assets/evaldock-brand-horizontal-pony.png?v=20260919-pony1" width="668" height="204" alt="" /></span><span class="dsh-brand-wordmark"><img src="./assets/evaldock-brand-horizontal-pony.png?v=20260919-pony1" width="668" height="204" alt="EvalDock" /></span></span></a>
-        <nav class="dsh-desktop-nav" aria-label="EvalDock 主导航"><a href="/">首页</a><a href="/top100/" aria-current="page">Top100</a><a href="/results">评测结果</a><a href="/methodology">评测方法</a><a href="/about">产品介绍</a></nav>
+        <a class="dsh-brand-link" href="/" aria-label="EvalDock 首页">
+          <span class="dsh-brand" translate="no">
+            <span class="dsh-brand-symbol" aria-hidden="true">
+              <img src="./assets/evaldock-brand-horizontal-pony.png?v=20260919-pony1" width="668" height="204" alt=""/>
+            </span>
+            <span class="dsh-brand-wordmark">
+              <img src="./assets/evaldock-brand-horizontal-pony.png?v=20260919-pony1" width="668" height="204" alt="EvalDock"/>
+            </span>
+          </span>
+        </a>
+        <nav class="dsh-desktop-nav" aria-label="EvalDock 主导航">
+          <div class="dsh-nav-root" data-mobile="false" data-active="true">
+            <div class="dsh-nav-heading">
+              <a class="dsh-nav-label" href="/library">评测库</a>
+              <button class="dsh-nav-toggle" type="button" aria-label="评测库子导航" aria-expanded="false" aria-controls="dsh-nav-library-desktop">
+                <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+                  <path d="m3 4.5 3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5">
+                  </path>
+                </svg>
+              </button>
+            </div>
+            <div id="dsh-nav-library-desktop" class="dsh-nav-panel" hidden>
+              <div class="dsh-nav-links">
+                <a href="/library">全部对象</a>
+                <a href="/library/coding">编程 Agent</a>
+                <a href="/library/office">办公 Agent</a>
+                <a href="/library/research">研究 Agent</a>
+                <a href="/library/design">创作 Agent</a>
+                <a href="/top100/" aria-current="page">Top100</a>
+              </div>
+            </div>
+          </div>
+          <div class="dsh-nav-root" data-mobile="false" data-active="false">
+            <div class="dsh-nav-heading">
+              <a class="dsh-nav-label" href="/results">结果</a>
+              <button class="dsh-nav-toggle" type="button" aria-label="结果子导航" aria-expanded="false" aria-controls="dsh-nav-results-desktop">
+                <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+                  <path d="m3 4.5 3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5">
+                  </path>
+                </svg>
+              </button>
+            </div>
+            <div id="dsh-nav-results-desktop" class="dsh-nav-panel" hidden>
+              <div class="dsh-nav-links">
+                <a href="/results">全部结果</a>
+                <a href="/results/coding">编程 Agent</a>
+                <a href="/results/office">办公 Agent</a>
+                <a href="/results/research">研究 Agent</a>
+                <a href="/results/design">创作 Agent</a>
+              </div>
+            </div>
+          </div>
+          <a href="/methodology">方法</a>
+          <a href="/tools">工具</a>
+        </nav>
         <details class="dsh-mobile-menu">
-          <summary>菜单<span class="dsh-menu-icon" aria-hidden="true"></span></summary>
-          <nav aria-label="EvalDock 移动端导航"><a href="/">首页</a><a href="/top100/" aria-current="page">Top100</a><a href="/results">评测结果</a><a href="/methodology">评测方法</a><a href="/about">产品介绍</a></nav>
-        </details>
-      </div>
-    </header>
+          <summary>菜单<span class="dsh-menu-icon" aria-hidden="true">
+          </span>
+        </summary>
+        <nav aria-label="EvalDock 移动端导航">
+          <div class="dsh-nav-root" data-mobile="true" data-active="true">
+            <div class="dsh-nav-heading">
+              <a class="dsh-nav-label" href="/library">评测库</a>
+              <button class="dsh-nav-toggle" type="button" aria-label="评测库子导航" aria-expanded="false" aria-controls="dsh-nav-library-mobile">
+                <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+                  <path d="m3 4.5 3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5">
+                  </path>
+                </svg>
+              </button>
+            </div>
+            <div id="dsh-nav-library-mobile" class="dsh-nav-panel" hidden>
+              <div class="dsh-nav-links">
+                <a href="/library">全部对象</a>
+                <a href="/library/coding">编程 Agent</a>
+                <a href="/library/office">办公 Agent</a>
+                <a href="/library/research">研究 Agent</a>
+                <a href="/library/design">创作 Agent</a>
+                <a href="/top100/" aria-current="page">Top100</a>
+              </div>
+            </div>
+          </div>
+          <div class="dsh-nav-root" data-mobile="true" data-active="false">
+            <div class="dsh-nav-heading">
+              <a class="dsh-nav-label" href="/results">结果</a>
+              <button class="dsh-nav-toggle" type="button" aria-label="结果子导航" aria-expanded="false" aria-controls="dsh-nav-results-mobile">
+                <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+                  <path d="m3 4.5 3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5">
+                  </path>
+                </svg>
+              </button>
+            </div>
+            <div id="dsh-nav-results-mobile" class="dsh-nav-panel" hidden>
+              <div class="dsh-nav-links">
+                <a href="/results">全部结果</a>
+                <a href="/results/coding">编程 Agent</a>
+                <a href="/results/office">办公 Agent</a>
+                <a href="/results/research">研究 Agent</a>
+                <a href="/results/design">创作 Agent</a>
+              </div>
+            </div>
+          </div>
+          <a href="/methodology">方法</a>
+          <a href="/tools">工具</a>
+        </nav>
+      </details>
+    </div>
+  </header>
 
     <main>
       <nav class="top100-section-nav" aria-label="Top100 栏目导航">
