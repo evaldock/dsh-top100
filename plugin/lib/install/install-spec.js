@@ -49,7 +49,7 @@ export function isNpmRegistrySpecifier(value) {
     return parseNpmSelector(value) !== null;
 }
 /** Bind historical verification to the exact package still on disk and in this Profile. */
-function verifiedInstalledRepository(name, value, evidence) {
+export function verifiedInstalledRepository(name, value, evidence) {
     const provenance = evidence?.provenance;
     const manifest = evidence?.manifest;
     if (!provenance || !manifest || provenance.source !== "npm" || provenance.repositoryIdentity !== "matched"

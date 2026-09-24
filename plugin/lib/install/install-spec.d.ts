@@ -20,4 +20,6 @@ export interface InstalledEntryEvidence {
     } | null;
     provenance: InstallProvenance | null;
 }
+/** Bind historical verification to the exact package still on disk and in this Profile. */
+export declare function verifiedInstalledRepository(name: string, value: string, evidence?: InstalledEntryEvidence): string | null;
 export declare function isInstalledEntry(entry: RankingEntry, installed: Record<string, string>, profile?: string, evidence?: Record<string, InstalledEntryEvidence>): boolean;

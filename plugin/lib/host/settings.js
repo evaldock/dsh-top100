@@ -21,14 +21,16 @@ export function installTop100Settings(ctx, resolved) {
             invalidateCatalog();
         },
     };
-    // 0.1.1 exposed a free helper; 0.1.2+ moved it onto the optional service.
     const legacy = settings;
     if (typeof legacy.installSettingsSection === "function") {
         legacy.installSettingsSection(ctx, TOP100_SETTINGS_NS, Top100Settings, entry, hooks);
     }
     else {
         ctx.inject(["settings"], (scoped) => {
-            scoped.settings.installSection(ctx, TOP100_SETTINGS_NS, Top100Settings, entry, hooks);
+            // 0.1.7 derives forms directly from the Loader entry's exported Config.
+            // Its settings service has no installSection; the host owns changes/reloads.
+            const service = scoped.get("settings");
+            service?.installSection?.(ctx, TOP100_SETTINGS_NS, Top100Settings, entry, hooks);
         });
     }
 }

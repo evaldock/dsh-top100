@@ -4,8 +4,9 @@ import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { DEFAULT_DATA_URL, loadSearchRankings, normalizeDataUrl } from "./catalog.js";
+import { githubRepositoryIdentity } from "../shared/github-source.js";
 import { matchCatalogEntry, skillsRoot } from "./manage.js";
-import { isInstalledEntry } from "../install/install-spec.js";
+import { isInstalledEntry, verifiedInstalledRepository } from "../install/install-spec.js";
 import { readBundleProvenance } from "./provenance.js";
 import { bundlePatchEntries, isProtectedPackage, readUserPatch, userPatchState, userPatchPath } from "./patch-toggle.js";
 import { applyDshPatches, disabledRowIds, insertedRows } from "./dsh-patch.js";
@@ -198,9 +199,16 @@ export async function buildDiagnosticReport(profile, options = {}) {
         let catalogEntry = matchCatalogEntry(document, name, spec, null);
         if (!catalogEntry && packageManifest && !official) {
             try {
-                const evidence = { [name]: { manifest: packageManifest, provenance: readBundleProvenance(name, profile, directory) } };
+                const provenance = readBundleProvenance(name, profile, directory);
+                // Recorded installs retain their stronger version/source checks. Repository
+                // metadata is a fallback only for packages installed outside this plugin.
+                const installedEvidence = { manifest: packageManifest, provenance };
+                const repository = provenance ? verifiedInstalledRepository(name, spec, installedEvidence) : githubRepositoryIdentity(packageManifest.repository);
+                if (repository)
+                    catalogEntry = matchCatalogEntry(document, name, spec, repository);
+                const evidence = { [name]: installedEvidence };
                 const matches = document?.rankings.total.filter((entry) => isInstalledEntry(entry, { [name]: spec }, profile, evidence)) ?? [];
-                if (matches.length === 1)
+                if (!catalogEntry && matches.length === 1)
                     catalogEntry = matches[0];
             }
             catch { /* Missing or unreadable provenance is not proof of a catalog association. */ }
@@ -232,7 +240,7 @@ export async function buildDiagnosticReport(profile, options = {}) {
         if (local)
             findings.push({ severity: "info", code: "bundle-local", subject: name, message: "本地 link/file 插件不能从排行页更新", detail: spec });
         if (document && !catalogEntry && !official)
-            findings.push({ severity: "info", code: "bundle-unlisted", subject: name, message: "已安装但不在当前榜单里" });
+            findings.push({ severity: "info", code: "bundle-unlisted", subject: name, message: "尚未匹配到榜单条目，不影响插件运行" });
         if (packageManifest && !official) {
             for (const [dependency, range] of Object.entries(stringRecord(packageManifest.peerDependencies))) {
                 const resolvedDir = resolvePeerDirectory(packageDirectory, directory, dependency, hostDir);

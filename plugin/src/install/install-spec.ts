@@ -59,7 +59,7 @@ export interface InstalledEntryEvidence {
 }
 
 /** Bind historical verification to the exact package still on disk and in this Profile. */
-function verifiedInstalledRepository(name: string, value: string, evidence?: InstalledEntryEvidence): string | null {
+export function verifiedInstalledRepository(name: string, value: string, evidence?: InstalledEntryEvidence): string | null {
   const provenance = evidence?.provenance;
   const manifest = evidence?.manifest;
   if (!provenance || !manifest || provenance.source !== "npm" || provenance.repositoryIdentity !== "matched"

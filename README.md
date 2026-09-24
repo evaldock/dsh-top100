@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://www.evaldock.ai/top100/"><img alt="在线体验" src="https://img.shields.io/badge/在线体验-Visit-5865f2?style=flat-square"></a>
-  <a href="https://github.com/evaldock/dsh-top100/releases/tag/v1.3.11"><img alt="正式版本 v1.3.11" src="https://img.shields.io/badge/release-v1.3.11-2f6f68?style=flat-square"></a>
+  <a href="https://github.com/evaldock/dsh-top100/releases/tag/v1.3.12"><img alt="正式版本 v1.3.12" src="https://img.shields.io/badge/release-v1.3.12-2f6f68?style=flat-square"></a>
   <a href="https://www.npmjs.com/package/@evaldock/dsh-top100-plugin"><img alt="npm latest" src="https://img.shields.io/npm/v/%40evaldock%2Fdsh-top100-plugin?style=flat-square&label=npm&color=cb3837"></a>
   <a href="https://www.evaldock.ai/top100/?page=dsh#dsh"><img alt="安装 dsh-top100" src="https://img.shields.io/badge/安装指南-接入_DSH-f2b84b?style=flat-square"></a>
   <a href="./CONTRIBUTING.md"><img alt="参与贡献" src="https://img.shields.io/badge/Contribute-参与贡献-555?style=flat-square&logo=github"></a>
@@ -69,10 +69,10 @@ Top100 是 [EvalDock](https://www.evaldock.ai/) 旗下的插件与 Skills 发现
 
 ## 安装到 DSH
 
-建议使用 **Node.js 24 LTS** 和 **DSH Web 0.1.5-rc.2**。本版同时适配 **DSH Web 0.1.6-alpha.2**，无需为插件升级切换到 alpha。实际验证与限制见[兼容说明](./docs/release-1.3.11.md)。普通 npm/npx 用户请在 DSH 源码目录外，依次运行：
+建议使用 **Node.js 24 LTS** 和 **DSH Web 0.1.5-rc.2**。本版同时适配 **DSH Web 0.1.6-alpha.2** 和 **0.1.7-rc.1**，无需为插件升级切换 DSH 版本。实际验证与限制见[兼容说明](./docs/release-1.3.12.md)。普通 npm/npx 用户请在 DSH 源码目录外，依次运行：
 
 ```sh
-npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web add @evaldock/dsh-top100-plugin@1.3.11
+npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web add @evaldock/dsh-top100-plugin@1.3.12
 npx @deepseek-ai/dsh@0.1.5-rc.2 web
 ```
 
@@ -83,7 +83,7 @@ npx @deepseek-ai/dsh@0.1.5-rc.2 web
 
 ```yaml
 minimumReleaseAgeExclude:
-  - '@evaldock/dsh-top100-plugin@1.3.11'
+  - '@evaldock/dsh-top100-plugin@1.3.12'
 ```
 
 默认文件位于用户主目录下的 `.dsh/profiles/web/pnpm-workspace.yaml`；设置了 `DSH_HOME` 时使用该目录下的 `profiles/web/pnpm-workspace.yaml`。首次安装命令会准备 Profile；尚未创建 Profile 时，可先运行 `npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web list`。若 Profile 已存在但缺少 `pnpm-workspace.yaml`，请在该 Profile 目录中创建此文件，再加入上述配置。全局或源码用户需沿用各自的命令前缀。
@@ -91,7 +91,7 @@ minimumReleaseAgeExclude:
 保存后，用同一种方式重新安装：
 
 ```sh
-npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web add -w @evaldock/dsh-top100-plugin@1.3.11
+npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web add -w @evaldock/dsh-top100-plugin@1.3.12
 ```
 
 该例外只放行这个版本，其他依赖仍遵守原等待期；如果报错指向其他包，应单独核对该包。后续升级须使用新版安装指引，不要沿用旧版本例外。
@@ -104,7 +104,7 @@ npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web add -w @evaldock/dsh-top100
 
 ```sh
 npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web remove @dsheval/dsh-top100-plugin
-npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web add @evaldock/dsh-top100-plugin@1.3.11
+npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web add @evaldock/dsh-top100-plugin@1.3.12
 npx @deepseek-ai/dsh@0.1.5-rc.2 web
 ```
 

@@ -10,6 +10,7 @@ export interface WebServerService {
 }
 export interface PluginHost {
     webServer: WebServerService;
+    restartCapability?: () => import("./restart.js").RestartCapability;
     readRuntime?: (bundles: readonly RuntimeBundle[]) => Record<string, HostRuntimeStatus>;
 }
 export interface PluginResolvedConfig {

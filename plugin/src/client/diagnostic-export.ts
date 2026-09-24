@@ -5,6 +5,7 @@ const CODES = new Set([
   "bundle-disabled", "bundle-local", "bundle-unlisted", "peer-mismatch", "peer-missing",
   "host-core-dependency", "duplicate-entry", "skill-manifest-missing",
   "core-multi-version", "patch-orphan", "extra-dependency",
+  "user-patch-invalid", "runtime-restart-required", "runtime-failed", "runtime-missing-services",
 ]);
 const count = (value: number): number | null => Number.isFinite(value) && value >= 0 ? value : null;
 
