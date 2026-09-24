@@ -31,6 +31,42 @@ var PluginErrorBoundary = class extends react.Component {
 };
 
 //#endregion
+//#region src/client/RankMark.tsx
+function RankTrustMark() {
+	return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
+		viewBox: "0 0 48 48",
+		"aria-hidden": "true",
+		children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("g", {
+			className: "rank-mark-list",
+			children: [
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
+					cx: "11",
+					cy: "14",
+					r: "2"
+				}),
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M17 14h17" }),
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
+					cx: "11",
+					cy: "23",
+					r: "2"
+				}),
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M17 23h12" }),
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
+					cx: "11",
+					cy: "32",
+					r: "2"
+				}),
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M17 32h7" })
+			]
+		}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", {
+			className: "rank-mark-check",
+			d: "m28.5 30.5 3.5 3.5 7-9"
+		})]
+	});
+}
+const rankMarkMask = `data:image/svg+xml,${encodeURIComponent("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"6 8 36 30\" fill=\"none\" stroke=\"black\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"14\" r=\"2\"/><circle cx=\"11\" cy=\"23\" r=\"2\"/><circle cx=\"11\" cy=\"32\" r=\"2\"/><path d=\"M17 14h17M17 23h12M17 32h7m4.5-1.5 3.5 3.5 7-9\"/></svg>")}`;
+
+//#endregion
 //#region src/client/DescriptionPreview.tsx
 /** Measure actual wrapping: short summaries need no extra control. */
 function DescriptionPreview({ text, t }) {
@@ -178,7 +214,11 @@ const CODES = new Set([
 	"skill-manifest-missing",
 	"core-multi-version",
 	"patch-orphan",
-	"extra-dependency"
+	"extra-dependency",
+	"user-patch-invalid",
+	"runtime-restart-required",
+	"runtime-failed",
+	"runtime-missing-services"
 ]);
 const count = (value) => Number.isFinite(value) && value >= 0 ? value : null;
 /** Construct a new payload; never copy free-form fields from the report. */
@@ -259,13 +299,13 @@ function presentDiagnosticFinding(finding, report, language) {
 	let message;
 	switch (finding.code) {
 		case "runtime-missing-services":
-			message = en$1 ? `Required host services are missing: ${(listParameter(finding, "services") ?? []).join(", ")}. Check the author’s configuration and companion plugins.` : `宿主入口缺少必需服务：${(listParameter(finding, "services") ?? []).join("、")}。请检查作者要求的配置或配套插件。`;
+			message = en$1 ? `Required services are missing: ${(listParameter(finding, "services") ?? []).join(", ")}. Check the author’s configuration and companion plugins.` : `缺少必需服务：${(listParameter(finding, "services") ?? []).join("、")}。请检查作者要求的配置或配套插件。`;
 			break;
 		case "runtime-failed":
-			message = en$1 ? "The host entry failed to load. Check DSH logs for the cause." : "宿主入口加载失败，请查看 DSH 日志中的具体原因。";
+			message = en$1 ? "The plugin failed to load. Check logs for the cause." : "插件加载失败，请查看日志中的具体原因。";
 			break;
 		case "runtime-restart-required":
-			message = en$1 ? "Configuration changed. Restart DSH, then refresh to verify." : "配置已改变，重启 DSH 后刷新验证。";
+			message = en$1 ? "Configuration changed. Restart, then refresh to verify." : "配置已改变，重启后刷新验证。";
 			break;
 		case "profile-missing":
 			message = en$1 ? "The Profile directory or package.json could not be read." : "Profile 目录或 package.json 不可读取。";
@@ -288,7 +328,7 @@ function presentDiagnosticFinding(finding, report, language) {
 			message = en$1 ? "Local link/file plugins must be updated at their source." : "本地 link/file 插件需在来源目录更新。";
 			break;
 		case "bundle-unlisted":
-			message = en$1 ? "This installed plugin is not in the current catalog." : "已安装的插件不在当前榜单里。";
+			message = en$1 ? "No catalog entry could be matched. This does not prevent the plugin from running." : "尚未匹配到榜单条目，不影响插件运行。";
 			break;
 		case "bundle-disabled":
 			message = en$1 ? "All loading entries for this plugin are disabled in the current configuration." : "当前配置已停用该插件的全部加载行。";
@@ -306,7 +346,7 @@ function presentDiagnosticFinding(finding, report, language) {
 		}
 		case "host-core-dependency": {
 			const dependency = parameter(finding, "dependency") ?? only(report.hostDeps.filter((item) => item.plugin === finding.subject))?.dependency;
-			message = dependency ? en$1 ? `Host core package ${dependency} is declared in dependencies.` : `把宿主核心包 ${dependency} 写进了 dependencies。` : en$1 ? "A host core package is declared in dependencies. See technical details." : "把宿主核心包写进了 dependencies，请查看技术详情。";
+			message = dependency ? en$1 ? `Core package ${dependency} is declared in dependencies.` : `把核心包 ${dependency} 写进了 dependencies。` : en$1 ? "A core package is declared in dependencies. See technical details." : "把核心包写进了 dependencies，请查看技术详情。";
 			break;
 		}
 		case "duplicate-entry": {
@@ -338,6 +378,57 @@ function presentDiagnosticFinding(finding, report, language) {
 }
 
 //#endregion
+//#region src/client/diagnostic-view.ts
+/** Group actionable findings by owner; informational states never inflate issue counts. */
+function diagnosticView(report) {
+	const groups = /* @__PURE__ */ new Map();
+	const seen = /* @__PURE__ */ new Set();
+	for (const finding of report.findings) {
+		if (finding.severity === "info") continue;
+		const identity = JSON.stringify([
+			finding.subject,
+			finding.code,
+			finding.parameters,
+			finding.detail
+		]);
+		if (seen.has(identity)) continue;
+		seen.add(identity);
+		const group = groups.get(finding.subject) ?? {
+			subject: finding.subject,
+			severity: finding.severity,
+			findings: []
+		};
+		group.findings.push(finding);
+		if (finding.severity === "error") group.severity = "error";
+		groups.set(finding.subject, group);
+	}
+	return {
+		issues: [...groups.values()].sort((a, b) => Number(b.severity === "error") - Number(a.severity === "error")),
+		pending: report.bundles.filter((bundle) => bundle.runtime?.state === "restart-required"),
+		unverified: report.bundles.filter((bundle) => bundle.enabled && (!bundle.runtime || ["unknown", "inactive"].includes(bundle.runtime.state))),
+		notes: report.findings.filter((finding) => finding.severity === "info" && finding.code !== "runtime-restart-required")
+	};
+}
+function diagnosticNextStep(code, language) {
+	return {
+		"profile-missing": ["核对当前 DSH 配置目录是否存在、是否可读取。", "Check that the active DSH profile directory exists and is readable."],
+		"catalog-unreachable": ["核对数据源地址和网络连接，再重新检查。", "Check the data source address and network connection, then check again."],
+		"catalog-stale": ["确认数据源已更新，再重新检查；无需重装插件。", "Check for a newer data snapshot, then check again. Reinstallation is not needed."],
+		"user-patch-invalid": ["备份配置后，按技术详情检查用户补丁的格式；不要直接清空配置。", "Back up the configuration and inspect the user patch syntax. Do not clear the configuration."],
+		"bundle-unresolved": ["核对该插件的安装文件及作者要求；从已安装页查看来源和维护方式。", "Check the installed files and author requirements. See the installed item for its source and maintenance options."],
+		"runtime-missing-services": ["按作者说明补齐配置或配套插件，再重启验证。", "Complete the required configuration or companion plugins, then restart to verify."],
+		"runtime-failed": ["查看日志中的加载错误，修复后再重启验证。", "Inspect the loading error in logs, fix its cause, then restart to verify."],
+		"peer-missing": ["按作者说明核对必需依赖，不要直接升级全部插件。", "Check required dependencies against the author's instructions. Do not upgrade all plugins blindly."],
+		"peer-mismatch": ["核对插件支持的 DSH 和依赖版本，选择兼容版本后重新检查。", "Check supported DSH and dependency versions, select compatible versions, then check again."],
+		"duplicate-entry": ["核对这些插件是否注册了同一入口，先停用不需要的一项再验证。", "Check which plugins register the same entry; disable an unneeded one and verify again."],
+		"patch-orphan": ["核对是否卸载或更名过插件，备份后再处理残留的停用项。", "Check for removed or renamed plugins; back up before cleaning obsolete disable entries."],
+		"skill-manifest-missing": ["检查技能目录是否完整，按来源说明补齐 SKILL.md。", "Check that the skill directory is complete and restore SKILL.md from its source."],
+		"host-core-dependency": ["向插件作者确认核心依赖的声明方式，不要手动删除依赖目录。", "Check core dependency declarations with the plugin author. Do not manually delete dependency directories."],
+		"core-multi-version": ["先核对是否确有加载冲突，再按插件要求调整版本；多个版本本身不证明运行故障。", "Check for actual loading conflicts before adjusting versions. Multiple versions alone do not prove a runtime failure."]
+	}[code]?.[language === "en" ? 1 : 0] ?? (language === "en" ? "Review the technical evidence before changing the configuration." : "先查看检查依据，再决定是否修改配置。");
+}
+
+//#endregion
 //#region src/client/DiagnosticsPage.tsx
 function TechnicalDetails({ text, language }) {
 	return text ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("details", { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("summary", { children: diagnosticLabels(language).technicalDetails }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("pre", { children: text })] }) : null;
@@ -362,28 +453,35 @@ function FindingList({ items, report, language }) {
 		})
 	});
 }
-function DiagnosticsPage({ t }) {
+function DiagnosticsPage({ t, onManage }) {
 	const language = t("descriptionLocale") === "en" ? "en" : "zh";
+	const text = (zh$1, en$1) => language === "en" ? en$1 : zh$1;
+	const request = (0, react.useRef)(new LatestRequest());
 	const [report, setReport] = (0, react.useState)(null);
 	const [error, setError] = (0, react.useState)(null);
 	const [exportError, setExportError] = (0, react.useState)(false);
 	const [loading, setLoading] = (0, react.useState)(true);
 	const load = (0, react.useCallback)(async () => {
+		const current = request.current.start();
 		setLoading(true);
 		setError(null);
 		try {
-			const response = await fetch("/dsh-top100/diagnose", { cache: "no-store" });
+			const response = await fetch("/dsh-top100/diagnose", {
+				cache: "no-store",
+				signal: current.signal
+			});
 			const body = await response.json();
 			if (!response.ok) throw new Error(body.error || `${response.status} ${response.statusText}`);
-			setReport(body);
+			if (current.isCurrent()) setReport(body);
 		} catch (cause) {
-			setError(cause instanceof Error ? cause.message : String(cause));
+			if (current.isCurrent()) setError(cause instanceof Error ? cause.message : String(cause));
 		} finally {
-			setLoading(false);
+			if (current.isCurrent()) setLoading(false);
 		}
 	}, []);
 	(0, react.useEffect)(() => {
 		load();
+		return () => request.current.cancel();
 	}, [load]);
 	if (error) return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 		className: "error",
@@ -428,36 +526,130 @@ function DiagnosticsPage({ t }) {
 			}
 		}
 	}
-	const errors = report.findings.filter((item) => item.severity === "error");
-	const warnings = report.findings.filter((item) => item.severity === "warning");
-	const infos = report.findings.filter((item) => item.severity === "info");
+	const view = diagnosticView(report);
+	const actionable = view.issues.flatMap((group) => group.findings);
+	const errors = actionable.filter((item) => item.severity === "error").length;
+	const warnings = actionable.length - errors;
+	const heading = view.issues.length ? text("有问题需要处理", "Issues need attention") : view.pending.length ? text("等待重启后验证", "Awaiting restart verification") : view.unverified.length ? text("配置检查通过，运行状态待确认", "Configuration checked; runtime unverified") : text("本次检查未发现异常", "No issues found in this check");
 	return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 		className: "diag-page",
+		"aria-busy": loading,
 		children: [
 			/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 				className: "diag-summary",
-				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("strong", {
-					className: errors.length ? "diag-error" : warnings.length ? "diag-warning" : "diag-ok",
-					children: loading ? t("diagLoading") : errors.length || warnings.length ? t("diagIssues") : t("diagOk")
-				}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-					className: "lede",
-					children: t("diagScopeShort")
-				})] }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", { children: [
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("strong", {
+						className: errors ? "diag-error" : warnings || view.pending.length ? "diag-warning" : view.unverified.length ? "" : "diag-ok",
+						children: loading ? t("diagLoading") : heading
+					}),
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+						className: "lede",
+						children: text("检查配置、依赖、数据源及加载状态。", "Checks configuration, dependencies, data source and loading state.")
+					}),
+					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("p", {
+						className: "lede",
+						children: [
+							text("检查于", "Checked at"),
+							" ",
+							new Date(report.scannedAt).toLocaleString(language === "en" ? "en-US" : "zh-CN")
+						]
+					})
+				] }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 					type: "button",
 					disabled: loading,
 					onClick: () => void load(),
 					children: t("diagRefresh")
 				})]
 			}),
-			errors.length || warnings.length ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(FindingList, {
-				items: [...errors, ...warnings],
-				report,
-				language
+			/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+				className: "diag-counts",
+				"aria-label": text("检查概况", "Check overview"),
+				children: [
+					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", { children: [
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("b", { children: errors }),
+						" ",
+						text("项错误", "errors")
+					] }),
+					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", { children: [
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("b", { children: warnings }),
+						" ",
+						text("项提醒", "warnings")
+					] }),
+					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", { children: [
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("b", { children: view.pending.length }),
+						" ",
+						text("个待重启", "pending restart")
+					] })
+				]
+			}),
+			view.issues.length ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
+				className: "diag-issues",
+				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h3", { children: text("待处理问题", "Needs attention") }), view.issues.map((group) => {
+					const bundle = report.bundles.find((item) => item.name === group.subject && item.kind === "community");
+					const subject = group.findings.some((finding) => finding.code.startsWith("catalog-")) ? text("榜单数据源", "Catalog data source") : group.subject;
+					const steps = [...new Set(group.findings.map((finding) => diagnosticNextStep(finding.code, language)))];
+					return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("article", {
+						className: "diag-issue",
+						children: [
+							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+								className: "diag-issue-heading",
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("strong", { children: subject }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+									className: `diag-${group.severity}`,
+									children: group.severity === "error" ? text("错误", "Error") : text("提醒", "Warning")
+								})]
+							}),
+							group.findings.map((finding, index) => {
+								const presented = presentDiagnosticFinding(finding, report, language);
+								return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+									className: "diag-evidence",
+									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", { children: presented.message }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(TechnicalDetails, {
+										text: presented.technicalDetails,
+										language
+									})]
+								}, `${finding.code}-${index}`);
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+								className: "diag-next",
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("strong", { children: text("建议下一步", "Suggested next step") }), steps.map((step) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", { children: step }, step))]
+							}),
+							bundle ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+								type: "button",
+								onClick: () => onManage(bundle.name),
+								children: text("查看已安装插件", "View installed plugin")
+							}) : null
+						]
+					}, group.subject);
+				})]
+			}) : null,
+			view.pending.length ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
+				className: "diag-pending",
+				children: [
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h3", { children: text("待重启验证", "Pending restart verification") }),
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", { children: view.pending.map((item) => item.name).join(" · ") }),
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+						className: "lede",
+						children: text("配置已变更。使用上方重启入口，完成后重新检查。", "Configuration changed. Use the restart control above, then check again.")
+					})
+				]
+			}) : null,
+			view.unverified.length ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("p", {
+				className: "lede",
+				children: [
+					text("以下插件尚未确认加载状态：", "Loading state is not confirmed for: "),
+					view.unverified.map((item) => item.name).join(" · "),
+					text("。这不等于运行正常或已经故障。", ". This does not establish either success or failure.")
+				]
 			}) : null,
 			/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("details", {
 				className: "diag-details",
 				children: [
-					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("summary", { children: t("diagDetails") }),
+					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("summary", { children: [
+						text("高级详情", "Advanced details"),
+						" · ",
+						report.bundles.length,
+						" ",
+						text("个插件", "plugins")
+					] }),
 					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 						className: "lede",
 						children: t("runtimeScope")
@@ -507,15 +699,15 @@ function DiagnosticsPage({ t }) {
 							] })
 						] })]
 					}),
-					infos.length ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
+					view.notes.length ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
 						className: "diag-section",
 						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("h3", { children: [
 							diagnosticLabels(language).information,
 							" (",
-							infos.length,
+							view.notes.length,
 							")"
 						] }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(FindingList, {
-							items: infos,
+							items: view.notes,
 							report,
 							language
 						})]
@@ -538,7 +730,12 @@ function DiagnosticsPage({ t }) {
 									" · ",
 									item.enabled ? t("enabled") : t("disabled"),
 									" ",
-									item.runtime ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [" · ", t(`runtime_${item.runtime.state}`)] }) : null,
+									/* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [
+										" · ",
+										text("运行", "Runtime"),
+										": ",
+										t(`runtime_${item.runtime?.state ?? "unknown"}`)
+									] }),
 									error$1 ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("small", {
 										className: "diag-error",
 										children: error$1.message
@@ -581,27 +778,27 @@ function DiagnosticsPage({ t }) {
 								report.patch.orphans.join(", ") || "—"
 							] })
 						]
-					})] }),
-					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-						className: "diag-export",
-						children: [
-							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
-								type: "button",
-								disabled: loading,
-								onClick: exportSummary,
-								children: t("diagExport")
-							}),
-							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-								className: "lede",
-								children: t("diagExportHint")
-							}),
-							exportError ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-								className: "error",
-								role: "alert",
-								children: t("diagExportFailed")
-							}) : null
-						]
-					})
+					})] })
+				]
+			}),
+			/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+				className: "diag-export",
+				children: [
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+						type: "button",
+						disabled: loading,
+						onClick: exportSummary,
+						children: t("diagExport")
+					}),
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+						className: "lede",
+						children: t("diagExportHint")
+					}),
+					exportError ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+						className: "error",
+						role: "alert",
+						children: t("diagExportFailed")
+					}) : null
 				]
 			})
 		]
@@ -1606,6 +1803,181 @@ function useTaskTracker() {
 }
 
 //#endregion
+//#region src/client/restart-client.ts
+/** Only a different, stable boot proves completion; an HTTP 200 from the old host does not. */
+async function waitForRestart(previousBoot, signal, timeoutMs = 6e4) {
+	const deadline = Date.now() + timeoutMs;
+	let candidate;
+	let since = 0;
+	while (!signal.aborted && Date.now() < deadline) {
+		try {
+			const response = await fetch("/dsh-top100/status", {
+				cache: "no-store",
+				signal: AbortSignal.any([signal, AbortSignal.timeout(3e3)])
+			});
+			const status = response.ok ? await response.json() : null;
+			if (typeof status?.bootId === "string" && status.bootId !== previousBoot) {
+				if (candidate !== status.bootId) {
+					candidate = status.bootId;
+					since = Date.now();
+				} else if (Date.now() - since >= 8e3) return;
+			} else candidate = void 0;
+		} catch {
+			candidate = void 0;
+		}
+		await new Promise((done) => {
+			const finish = () => {
+				clearTimeout(timer);
+				signal.removeEventListener("abort", finish);
+				done();
+			};
+			const timer = setTimeout(finish, 1e3);
+			signal.addEventListener("abort", finish, { once: true });
+			if (signal.aborted) finish();
+		});
+	}
+	throw new Error(signal.aborted ? "restartCancelled" : "restartTimeout");
+}
+
+//#endregion
+//#region src/client/RestartNotice.tsx
+const SUCCESS_KEY = "dsh-top100:restart-completed";
+function RestartNotice({ t, busy }) {
+	const [status, setStatus] = (0, react.useState)(null);
+	const [working, setWorking] = (0, react.useState)(false);
+	const [confirming, setConfirming] = (0, react.useState)(false);
+	const [completed, setCompleted] = (0, react.useState)(() => {
+		try {
+			const at = Number(sessionStorage.getItem(SUCCESS_KEY));
+			return at > 0 && Date.now() >= at && Date.now() - at < 6e4;
+		} catch {
+			return false;
+		}
+	});
+	(0, react.useEffect)(() => {
+		try {
+			sessionStorage.removeItem(SUCCESS_KEY);
+		} catch {}
+	}, []);
+	const [error, setError] = (0, react.useState)(null);
+	const locked = (0, react.useRef)(false);
+	const lifetime = (0, react.useRef)(null);
+	const restartButton = (0, react.useRef)(null);
+	const cancelButton = (0, react.useRef)(null);
+	const wasConfirming = (0, react.useRef)(false);
+	(0, react.useEffect)(() => {
+		if (confirming) cancelButton.current?.focus();
+		else if (wasConfirming.current && !working) restartButton.current?.focus();
+		wasConfirming.current = confirming;
+	}, [confirming, working]);
+	(0, react.useEffect)(() => {
+		const controller = new AbortController();
+		lifetime.current = controller;
+		const poll = async () => {
+			if (locked.current) return;
+			try {
+				const response = await fetch("/dsh-top100/status", {
+					cache: "no-store",
+					signal: controller.signal
+				});
+				if (response.ok) {
+					const next = await response.json();
+					if (!controller.signal.aborted) setStatus(next);
+				}
+			} catch {}
+		};
+		poll();
+		const timer = setInterval(() => void poll(), 4e3);
+		return () => {
+			controller.abort();
+			clearInterval(timer);
+		};
+	}, []);
+	async function restart() {
+		const signal = lifetime.current?.signal;
+		if (locked.current || busy || !status?.restart?.available || !status.bootId || !signal) return;
+		locked.current = true;
+		setWorking(true);
+		setConfirming(false);
+		setError(null);
+		try {
+			let response;
+			try {
+				response = await fetch("/dsh-top100/restart", {
+					method: "POST",
+					signal: AbortSignal.any([signal, AbortSignal.timeout(7e3)])
+				});
+			} catch {}
+			if (response && response.status !== 202) throw new Error(response.status === 409 ? "restartBusy" : "restartFailed");
+			await waitForRestart(status.bootId, signal);
+			try {
+				sessionStorage.setItem(SUCCESS_KEY, String(Date.now()));
+			} catch {}
+			window.location.reload();
+		} catch (cause) {
+			if (!signal.aborted) setError(t(cause instanceof Error ? cause.message : "restartFailed"));
+		} finally {
+			locked.current = false;
+			if (!signal.aborted) setWorking(false);
+		}
+	}
+	if (completed && !status?.restartRequired) return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+		className: "restart-notice restart-complete",
+		role: "status",
+		children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("strong", { children: t("restartCompleted") }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", { children: t("restartCompletedHint") })] }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+			type: "button",
+			onClick: () => setCompleted(false),
+			children: t("dismissTaskNotice")
+		})]
+	});
+	if (!status?.restartRequired && !working && !error) return null;
+	return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+		className: "restart-notice",
+		role: "status",
+		children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", { children: [
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("strong", { children: t(working ? "restarting" : confirming ? "restartConfirmTitle" : "restartRequiredTitle") }),
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", { children: t(working ? "restartWaiting" : confirming ? "restartConfirm" : status?.restart?.available ? "restartReadyHint" : `restartUnavailable_${status?.restart?.reason ?? "launcher"}`) }),
+			error ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+				className: "error",
+				role: "alert",
+				children: error
+			}) : null
+		] }), confirming ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+			className: "restart-confirm-actions",
+			role: "group",
+			"aria-label": t("restartConfirmTitle"),
+			onKeyDown: (event) => {
+				if (event.key === "Escape") {
+					event.preventDefault();
+					event.stopPropagation();
+					setConfirming(false);
+				}
+			},
+			children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+				ref: cancelButton,
+				type: "button",
+				onClick: () => setConfirming(false),
+				children: t("cancel")
+			}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+				type: "button",
+				disabled: busy || !status?.restart?.available,
+				onClick: () => void restart(),
+				children: t("restartConfirmAction")
+			})]
+		}) : status?.restart?.available ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+			ref: restartButton,
+			type: "button",
+			disabled: busy || working,
+			onClick: () => {
+				setError(null);
+				setConfirming(true);
+			},
+			children: t(working ? "restarting" : "restartNow")
+		}) : null]
+	});
+}
+
+//#endregion
 //#region src/client/TaskStatus.tsx
 function TaskStatus({ tracking, t, onViewResult }) {
 	const recent = tracking.history.flatMap((batch) => batch.jobs);
@@ -2054,6 +2426,8 @@ async function readJson$1(url, init) {
 }
 function ManagedPage({ t, tracking, retryUpdate, onRetryConsumed, initialQuery = "", onBrowseSkills }) {
 	const [draft, setDraft] = (0, react.useState)(initialQuery);
+	const [toggling, setToggling] = (0, react.useState)(null);
+	const toggleLock = (0, react.useRef)(false);
 	const [optionsOpen, setOptionsOpen] = (0, react.useState)(false);
 	const [query, setQuery] = (0, react.useState)(initialQuery);
 	const [data, setData] = (0, react.useState)(null);
@@ -2212,6 +2586,11 @@ function ManagedPage({ t, tracking, retryUpdate, onRetryConsumed, initialQuery =
 		}
 	}
 	async function toggle(item) {
+		if (toggleLock.current) return;
+		toggleLock.current = true;
+		setToggling(item.name);
+		setError(null);
+		setNotice(null);
 		setRetryNames(null);
 		try {
 			await readJson$1("/dsh-top100/toggle", {
@@ -2222,10 +2601,13 @@ function ManagedPage({ t, tracking, retryUpdate, onRetryConsumed, initialQuery =
 					enabled: !item.enabled
 				})
 			});
-			setNotice(t("restart"));
+			setNotice(t("toggleSaved"));
 			await load();
 		} catch (cause) {
 			setError(cause instanceof Error ? cause.message : String(cause));
+		} finally {
+			toggleLock.current = false;
+			setToggling(null);
 		}
 	}
 	async function migrateSources() {
@@ -2264,7 +2646,7 @@ function ManagedPage({ t, tracking, retryUpdate, onRetryConsumed, initialQuery =
 			setMigrating(false);
 		}
 	}
-	const operationBlocked = !tracking.ready || busy !== null || preparing || submitting || migrating || review !== null;
+	const operationBlocked = !tracking.ready || busy !== null || preparing || submitting || migrating || review !== null || toggling !== null;
 	const hasUpdateSettings = data?.items.some((item) => item.kind === "bundle" && !item.protected && !item.local) ?? false;
 	const updates = data?.items.filter((item) => item.kind === "bundle" && !item.protected && !item.local && (updateStrategy === "latest" || item.updateAvailable || !item.latest)) ?? [];
 	function descriptionFor$1(item) {
@@ -2492,145 +2874,159 @@ function ManagedPage({ t, tracking, retryUpdate, onRetryConsumed, initialQuery =
 					const shortName = item.name.replace(/^@[^/]+\//, "");
 					const displayName = ["@dsheval/dsh-top100-plugin", "@evaldock/dsh-top100-plugin"].includes(item.name) ? "dsh-top100" : data?.items.some((other) => other.name !== item.name && other.name.replace(/^@[^/]+\//, "") === shortName) ? item.name : shortName;
 					const versionsKnown = Boolean(item.version && item.latest && parseSemver(item.version.replace(/^v/, "")) && parseSemver(item.latest.replace(/^v/, "")));
+					const statusLabel = t(item.kind === "skill" ? "installed" : item.runtime ? `runtime_${item.runtime.state}` : `activation_${item.activationState}`);
+					const loaded = item.kind === "bundle" && (item.runtime ? item.runtime.state === "loaded" : item.activationState === "live");
 					const noUpdate = updateStrategy === "preserve" && versionsKnown && !item.updateAvailable;
-					return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("article", { children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("details", {
-						className: "managed-details",
-						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("summary", { children: [
-							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
-								className: "managed-title",
-								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-									className: `dot ${item.kind === "skill" ? "off" : item.activationState === "live" ? "live" : item.activationState === "broken" ? "broken" : item.activationState === "restart-required" ? "pending" : "off"}`,
-									"aria-hidden": "true"
-								}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-									title: item.name,
-									children: displayName
+					return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("article", {
+						className: "managed-item",
+						children: [
+							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+								className: "managed-item-main",
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+									className: "managed-item-heading",
+									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+										className: "managed-item-icon",
+										"aria-hidden": "true",
+										children: displayName === "dsh-top100" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(RankTrustMark, {}) : item.kind === "skill" ? "✦" : "▦"
+									}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", { children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+										className: "managed-item-title",
+										children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h3", {
+											title: item.name,
+											children: displayName
+										}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+											className: "managed-version",
+											children: [item.version ? `v${item.version.replace(/^v/, "")}` : t("installed"), item.kind === "skill" ? ` · ${t("skillKind")}` : ""]
+										})]
+									}) })]
+								}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+									className: "desc managed-description",
+									children: descriptionFor$1(item)
 								})]
 							}),
-							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
-								className: "managed-disclosure",
-								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: t(item.protected ? "viewDetails" : "manage") }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Chevron, {})]
-							}),
 							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-								className: "facts",
-								children: [
-									item.kind === "skill" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-										className: "badge",
-										children: t("skillKind")
-									}) : null,
-									/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+								className: "managed-item-footer",
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+									className: "managed-item-status",
+									children: [!loaded ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
 										className: `badge activation-${item.activationState}`,
 										title: t("runtimeScope"),
-										children: t(item.kind === "skill" ? "installed" : item.runtime ? `runtime_${item.runtime.state}` : `activation_${item.activationState}`)
-									}),
-									item.version ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", { children: [
-										t("version"),
-										": ",
-										item.version
-									] }) : null,
-									item.updateAvailable ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-										className: "badge warn",
-										children: t("updateAvailable")
-									}) : null,
-									item.updateError ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-										className: "badge warn",
-										children: t("updateStatus_failed")
-									}) : null
-								]
-							})
-						] }), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-							className: "managed-body",
-							children: [
-								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-									className: "desc",
-									children: descriptionFor$1(item)
-								}),
-								item.updateAvailable && item.latest ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("p", {
-									className: "lede",
-									children: [
-										t("updateAvailable"),
-										": ",
-										item.latest
-									]
-								}) : null,
-								item.updateError ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("details", { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("summary", { children: t("updateCheckDetails") }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-									className: "lede",
-									children: item.updateError
-								})] }) : null,
-								item.kind === "skill" && item.modificationState ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-									className: "lede",
-									children: t(`skillModification_${item.modificationState}`)
-								}) : null,
-								item.runtime?.missingServices?.length ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("details", { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("summary", { children: t("runtimeDetails") }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("code", { children: item.runtime.missingServices.join(", ") })] }) : null,
-								item.kind === "bundle" && (item.protected || item.local) ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-									className: "lede",
-									children: t(item.protected ? "protectedManageHint" : "localManageHint")
-								}) : null,
-								item.kind === "skill" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-									className: "lede",
-									children: t("skillReinstallHint")
-								}) : null,
-								/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-									className: "managed-footer",
-									children: [!item.protected || job ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-										className: "actions row-actions",
-										children: [
-											job ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-												className: "job",
-												children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(TaskDetails, {
-													job,
-													t
-												})
-											}) : null,
-											job?.action === "update" && (job.phase === "failed" || job.phase === "cancelled") ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
-												type: "button",
-												disabled: item.protected || item.local || operationBlocked,
-												onClick: () => void prepareUpdates([item.name]),
-												children: t("retry")
-											}) : null,
-											item.kind === "bundle" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
-												type: "button",
-												disabled: item.protected || operationBlocked,
-												onClick: () => void toggle(item),
-												children: item.enabled ? t("disable") : t("enable")
-											}) : null,
-											item.kind === "bundle" && !item.local && !noUpdate ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
-												type: "button",
-												disabled: item.protected || operationBlocked || data?.sourceMigrationRequired === true,
-												onClick: () => void prepareUpdates([item.name]),
-												children: t(item.updateAvailable ? "update" : "checkUpdates")
-											}) : null,
-											item.kind === "skill" && onBrowseSkills ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
-												type: "button",
-												disabled: operationBlocked,
-												onClick: onBrowseSkills,
-												children: t("browseSkillUpdates")
-											}) : null,
-											/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
-												type: "button",
-												className: "danger",
-												disabled: item.protected || operationBlocked || item.kind === "bundle" && data?.sourceMigrationRequired === true,
-												onClick: () => void manage("uninstall", [item.name], item.kind),
-												children: t("uninstall")
-											})
-										]
-									}) : null, /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-										className: "managed-links",
-										children: [item.url ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("a", {
-											href: item.url,
-											target: "_blank",
-											rel: "noreferrer",
-											children: [t("viewProject"), " ↗"]
-										}) : null, item.protected ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("a", {
-											href: "https://www.evaldock.ai/top100/?page=dsh#dsh",
-											target: "_blank",
-											rel: "noreferrer",
-											children: [t("maintenanceGuide"), " ↗"]
-										}) : null]
-									})]
+										children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: `dot ${item.kind === "skill" ? "off" : item.activationState === "live" ? "live" : item.activationState === "broken" ? "broken" : item.activationState === "restart-required" ? "pending" : "off"}`,
+											"aria-hidden": "true"
+										}), statusLabel]
+									}) : null, item.kind === "bundle" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+										type: "button",
+										role: "switch",
+										className: "managed-switch",
+										"aria-checked": item.enabled,
+										"aria-label": `${t(item.enabled ? "disable" : "enable")} ${item.name}`,
+										title: t(item.protected ? "protectedManageHint" : item.enabled ? "disable" : "enable"),
+										disabled: item.protected || operationBlocked,
+										onClick: () => void toggle(item),
+										children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {})
+									}) : null]
+								}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+									className: "managed-item-actions",
+									children: item.protected ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+										className: "managed-version",
+										children: t("managedProtected")
+									}) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [
+										item.kind === "bundle" && !item.local ? noUpdate ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: "managed-version",
+											children: t("noUpdateAvailable")
+										}) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
+											type: "button",
+											className: item.updateAvailable ? "primary" : void 0,
+											disabled: operationBlocked || data?.sourceMigrationRequired === true,
+											onClick: () => void prepareUpdates([item.name]),
+											children: [t(item.updateAvailable ? "update" : "checkUpdates"), item.updateAvailable && item.latest ? ` · v${item.latest.replace(/^v/, "")}` : ""]
+										}) : null,
+										item.kind === "skill" && onBrowseSkills ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+											type: "button",
+											disabled: operationBlocked,
+											onClick: onBrowseSkills,
+											children: t("browseSkillUpdates")
+										}) : null,
+										/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+											type: "button",
+											className: "danger",
+											disabled: operationBlocked || item.kind === "bundle" && data?.sourceMigrationRequired === true,
+											onClick: () => void manage("uninstall", [item.name], item.kind),
+											children: t("uninstall")
+										})
+									] })
+								})]
+							}),
+							job ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+								className: "job",
+								children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(TaskDetails, {
+									job,
+									t
 								})
-							]
-						})]
-					}) }, `${item.kind}-${item.name}`);
+							}) : null,
+							job?.action === "update" && (job.phase === "failed" || job.phase === "cancelled") ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+								type: "button",
+								disabled: item.protected || item.local || operationBlocked,
+								onClick: () => void prepareUpdates([item.name]),
+								children: t("retry")
+							}) : null,
+							item.updateError ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+								className: "managed-update-error",
+								children: t("updateStatus_failed")
+							}) : null,
+							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("details", {
+								className: "managed-details",
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("summary", { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: t("viewDetails") }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Chevron, {})] }), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+									className: "managed-body",
+									children: [
+										/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+											className: "managed-package",
+											children: item.name
+										}),
+										item.kind === "bundle" ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("strong", { children: statusLabel }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+											className: "lede",
+											children: t("runtimeScope")
+										})] }) : null,
+										/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+											className: "desc",
+											children: descriptionFor$1(item)
+										}),
+										item.updateError ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+											className: "lede",
+											children: item.updateError
+										}) : null,
+										item.kind === "skill" && item.modificationState ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+											className: "lede",
+											children: t(`skillModification_${item.modificationState}`)
+										}) : null,
+										item.runtime?.missingServices?.length ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("strong", { children: t("runtimeDetails") }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", { children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("code", { children: item.runtime.missingServices.join(", ") }) })] }) : null,
+										item.kind === "bundle" && (item.protected || item.local) ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+											className: "lede",
+											children: t(item.protected ? "protectedManageHint" : "localManageHint")
+										}) : null,
+										item.kind === "skill" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+											className: "lede",
+											children: t("skillReinstallHint")
+										}) : null,
+										/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+											className: "managed-links",
+											children: [item.url ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("a", {
+												href: item.url,
+												target: "_blank",
+												rel: "noreferrer",
+												children: [t("viewProject"), " ↗"]
+											}) : null, item.protected ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("a", {
+												href: "https://www.evaldock.ai/top100/?page=dsh#dsh",
+												target: "_blank",
+												rel: "noreferrer",
+												children: [t("maintenanceGuide"), " ↗"]
+											}) : null]
+										})
+									]
+								})]
+							})
+						]
+					}, `${item.kind}-${item.name}`);
 				}), !loading && data?.items.length === 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 					className: "lede",
 					children: t("emptyInstalled")
@@ -2705,38 +3101,6 @@ const GITHUB_ICON = /* @__PURE__ */ (0, react_jsx_runtime.jsx)("svg", {
 	focusable: "false",
 	children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M12 .7a11.3 11.3 0 0 0-3.6 22c.6.1.8-.3.8-.6v-2.2c-3.3.7-4-1.4-4-1.4-.5-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.9 1.2 1.9 1.2 1.1 1.9 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-6a4.7 4.7 0 0 1 1.2-3.1c-.1-.3-.5-1.6.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.5.2 2.8.1 3.1a4.7 4.7 0 0 1 1.2 3.1c0 4.7-2.8 5.7-5.5 6 .4.4.8 1.1.8 2.2v3.2c0 .4.2.7.8.6A11.3 11.3 0 0 0 12 .7Z" })
 });
-function RankTrustMark() {
-	return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
-		viewBox: "0 0 48 48",
-		"aria-hidden": "true",
-		children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("g", {
-			className: "rank-mark-list",
-			children: [
-				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
-					cx: "11",
-					cy: "14",
-					r: "2"
-				}),
-				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M17 14h17" }),
-				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
-					cx: "11",
-					cy: "23",
-					r: "2"
-				}),
-				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M17 23h12" }),
-				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("circle", {
-					cx: "11",
-					cy: "32",
-					r: "2"
-				}),
-				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M17 32h7" })
-			]
-		}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", {
-			className: "rank-mark-check",
-			d: "m28.5 30.5 3.5 3.5 7-9"
-		})]
-	});
-}
 function CategoryGlyph({ id }) {
 	return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 		viewBox: "0 0 24 24",
@@ -2818,6 +3182,7 @@ async function readJson(url, init) {
 	return body;
 }
 function RankingsPage({ t }) {
+	const [managedQuery, setManagedQuery] = (0, react.useState)("");
 	const [section, setSection] = (0, react.useState)("rankings");
 	const [view, setView] = (0, react.useState)("hot");
 	const [category, setCategory] = (0, react.useState)(null);
@@ -2953,6 +3318,7 @@ function RankingsPage({ t }) {
 	}
 	function selectSection(nextSection) {
 		resetPreflight();
+		setManagedQuery("");
 		setSection(nextSection);
 	}
 	function startSearch(value) {
@@ -3195,6 +3561,10 @@ function RankingsPage({ t }) {
 						children: t("diagnostics")
 					})
 				]
+			}),
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)(RestartNotice, {
+				t,
+				busy: !tracking.ready || tracking.busy !== null
 			}),
 			/* @__PURE__ */ (0, react_jsx_runtime.jsx)(TaskStatus, {
 				tracking,
@@ -3685,6 +4055,7 @@ function RankingsPage({ t }) {
 					})
 				}) : null
 			] }) : section === "installed" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ManagedPage, {
+				initialQuery: managedQuery,
 				t,
 				tracking,
 				retryUpdate: updateRetry,
@@ -3699,7 +4070,14 @@ function RankingsPage({ t }) {
 					setDraft("");
 					setSection("rankings");
 				}
-			}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)(DiagnosticsPage, { t }),
+			}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)(DiagnosticsPage, {
+				t,
+				onManage: (name$1) => {
+					resetPreflight();
+					setManagedQuery(name$1);
+					setSection("installed");
+				}
+			}),
 			batch && installActivityOpen ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 				className: "install-activity-mask",
 				children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
@@ -3766,7 +4144,7 @@ function SettingsCard({ t, settings }) {
 			try {
 				const url = new URL(draft.trim());
 				if (!["http:", "https:"].includes(url.protocol)) throw new Error(t("sourceInvalid"));
-				await settings.set("dataUrl", draft.trim().replace(/\/+$/, ""));
+				if (await settings.set("dataUrl", draft.trim().replace(/\/+$/, "")) === false) throw new Error(t("sourceConflict"));
 				if (mounted.current) {
 					setDraft(null);
 					setMessage(t("sourceSaved"));
@@ -3812,8 +4190,47 @@ function SettingsCard({ t, settings }) {
 }
 
 //#endregion
+//#region src/client/settings-nav-icon.ts
+/** DSH currently assigns a gear to every third-party settings section.
+* Like dsh-market, mark only our localized row until the slot accepts icons.
+* CSS supplies our own mark; the host DOM and its other icons stay intact.
+*/
+function installNavIcon(label) {
+	if (typeof document === "undefined" || typeof MutationObserver === "undefined") return;
+	const marker = "data-dsh-top100-nav-icon";
+	let disposed = false;
+	let queued = false;
+	const sync = () => {
+		queued = false;
+		if (disposed) return;
+		const wanted = label().trim();
+		for (const row of document.querySelectorAll(`[${marker}]`)) row.removeAttribute(marker);
+		if (!wanted) return;
+		for (const row of document.querySelectorAll("[role=\"dialog\"] nav button")) if (row.textContent?.trim() === wanted) row.setAttribute(marker, "");
+	};
+	const observer = new MutationObserver(() => {
+		if (queued || disposed) return;
+		queued = true;
+		queueMicrotask(sync);
+	});
+	observer.observe(document.body, {
+		subtree: true,
+		childList: true,
+		characterData: true
+	});
+	sync();
+	return () => {
+		disposed = true;
+		observer.disconnect();
+		for (const row of document.querySelectorAll(`[${marker}]`)) row.removeAttribute(marker);
+	};
+}
+
+//#endregion
 //#region src/client/styles.ts
 const css = `
+[data-dsh-top100-nav-icon] > svg { display: none; }
+[data-dsh-top100-nav-icon]::before { content: ""; flex: 0 0 16px; width: 16px; height: 16px; background: currentColor; mask: url("${rankMarkMask}") center / contain no-repeat; -webkit-mask: url("${rankMarkMask}") center / contain no-repeat; }
 .dsh-top100 {
   color-scheme: light;
   --t100-ink: #1c2024;
@@ -3954,13 +4371,14 @@ const css = `
 }
 .dsh-top100 .page-tabs {
   display: flex;
+  overflow-x: auto;
   gap: 2px;
   padding: 0 0 8px;
   border-bottom: 1px solid var(--t100-line);
 }
 .dsh-top100 .page-tabs button {
   min-width: 0;
-  flex: 0 1 auto;
+  flex: 0 0 auto;
   white-space: nowrap;
   border: 0;
   border-bottom: 2px solid transparent;
@@ -4695,11 +5113,41 @@ const css = `
 .dsh-top100 .row-actions {
   min-width: 104px;
 }
-.dsh-top100 .managed-list { gap: 0; padding: 0; overflow: visible; }
-.dsh-top100 .managed-list article {
-  min-width: 0;
-  border-bottom: 1px solid var(--t100-line);
-}
+/* Installed items are comparison rows, with actions separate from disclosure. */
+.dsh-top100 .managed-list { display: flex; flex-direction: column; gap: 0; padding: 0; overflow: visible; border-top: 1px solid var(--t100-line); }
+.dsh-top100 .managed-list article.managed-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 18px; min-width: 0; padding: 16px 0; border: 0; border-bottom: 1px solid var(--t100-line); border-radius: 0; background: var(--t100-surface); }
+.dsh-top100 .managed-item-main { min-width: 0; }
+.dsh-top100 .managed-item-title { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 8px; }
+.dsh-top100 .managed-item-title .managed-version { white-space: nowrap; }
+.dsh-top100 .managed-item-icon svg { width: 30px; height: 30px; }
+.dsh-top100 .managed-item-footer { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 8px; }
+.dsh-top100 .managed-item-heading { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.dsh-top100 .managed-item-heading > div { min-width: 0; }
+.dsh-top100 .managed-item h3 { margin: 0; font-size: 14px; line-height: 22px; font-weight: 650; overflow-wrap: anywhere; }
+.dsh-top100 .managed-item-icon { display: grid; place-items: center; flex: 0 0 30px; height: 30px; color: var(--t100-accent); font-size: 22px; }
+.dsh-top100 .managed-package { margin: 0; color: var(--t100-muted); font-size: 11px; line-height: 16px; overflow-wrap: anywhere; }
+.dsh-top100 .managed-version { margin: 0; color: var(--t100-muted); font-size: 12px; line-height: 18px; }
+.dsh-top100 .managed-item .managed-description { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin: 2px 0 0 40px; font-size: 13px; line-height: 20px; }
+.dsh-top100 .managed-item-status { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; }
+.dsh-top100 .managed-item-status .badge { display: inline-flex; align-items: center; gap: 6px; padding: 0; background: transparent; font-size: 11px; line-height: 16px; }
+.dsh-top100 .managed-item-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
+.dsh-top100 .managed-item-actions button { min-height: 30px; height: auto; padding: 5px 9px; font-size: 12px; line-height: 18px; }
+.dsh-top100 .managed-item > .job, .dsh-top100 .managed-item > .managed-update-error { grid-column: 1 / -1; }
+.dsh-top100 .managed-item > .managed-details { grid-column: 1 / -1; min-width: 0; margin-left: 40px; }
+.dsh-top100 button.managed-switch { flex: 0 0 36px; width: 36px; height: 22px; min-height: 22px; padding: 2px; border: 0; border-radius: 99px; background: #737780; }
+.dsh-top100 button.managed-switch[aria-checked="true"] { background: #16834b; }
+.dsh-top100 .managed-switch > span { display: block; width: 18px; height: 18px; border-radius: 50%; background: white; transition: transform 120ms ease; }
+.dsh-top100 .managed-switch[aria-checked="true"] > span { transform: translateX(14px); }
+.dsh-top100 .managed-switch:disabled { opacity: .45; }
+.dsh-top100 .managed-update-error { margin: 0; color: #9a6700; font-size: 12px; }
+.dsh-top100 .restart-notice { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 14px 16px; border: 1px solid #e4cc86; border-radius: 10px; background: #fffbeb; color: #785213; }
+.dsh-top100 .restart-notice > div { flex: 1 1 220px; }
+.dsh-top100 .restart-notice > .restart-confirm-actions { display: flex; flex: 0 1 auto; flex-wrap: wrap; gap: 8px; }
+.dsh-top100 .restart-notice.restart-complete { background: var(--t100-surface); border-color: var(--t100-line); color: var(--t100-ink); }
+.dsh-top100 .restart-notice.restart-complete strong { color: #16834b; }
+.dsh-top100 .restart-notice strong { font-size: 13px; }
+.dsh-top100 .restart-notice p { margin: 4px 0 0; font-size: 12px; line-height: 19px; }
+@media (prefers-reduced-motion: reduce) { .dsh-top100 .managed-switch > span { transition: none; } }
 .dsh-top100 .managed-context { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px 8px; }
 .dsh-top100 button.manage-options-trigger { display: inline-flex; align-items: center; gap: 5px; height: 32px; padding: 0 10px; border: 1px solid var(--t100-line); color: var(--t100-body); font-size: 13px; }
 .dsh-top100 .manage-options-trigger:hover { background: var(--t100-fill); }
@@ -4718,18 +5166,28 @@ const css = `
 .dsh-top100 .managed-strategies button { height: auto; min-height: 34px; padding: 7px 12px; font-size: 13px; line-height: 18px; }
 .dsh-top100 .managed-strategies button[aria-pressed="true"] { color: var(--t100-accent); background: var(--t100-accent-soft); border-color: var(--t100-accent); }
 .dsh-top100 .managed-list .managed-details > summary {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: baseline;
-  gap: 5px 12px;
-  padding: 14px 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: fit-content;
+  padding: 0;
+  font-size: 12px;
+  line-height: 20px;
+  color: var(--t100-muted);
   list-style: none;
 }
+.dsh-top100 .managed-list .managed-details[open] > .managed-body { margin-top: 8px; padding: 12px; border-left: 2px solid var(--t100-line); background: var(--t100-fill); }
+@container (max-width: 420px) {
+  .dsh-top100 .managed-list article.managed-item { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .dsh-top100 .managed-item-footer { flex-direction: row; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-left: 40px; }
+  .dsh-top100 .managed-item-status, .dsh-top100 .managed-item-actions { justify-content: flex-start; }
+}
+
 .dsh-top100 .managed-details > summary::-webkit-details-marker { display: none; }
 .dsh-top100 .managed-details > summary .facts { grid-column: 1 / -1; margin: 0 0 0 18px; font-weight: 400; }
 .dsh-top100 .managed-details > summary .badge { padding: 0; background: transparent; }
 .dsh-top100 .managed-details > summary .badge.warn { color: #9a6700; }
-.dsh-top100 .managed-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 0 0 14px 18px; }
+.dsh-top100 .managed-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 10px 0 0; }
 .dsh-top100 .managed-body .facts { margin: 0; }
 .dsh-top100 .managed-body > * { min-width: 0; margin: 0; overflow-wrap: anywhere; }
 .dsh-top100 .managed-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
@@ -4859,6 +5317,18 @@ const css = `
 .dsh-top100 .diag-list { line-height: 1.6; gap: 10px; }
 .dsh-top100 .diag-list strong { font-weight: 500; }
 .dsh-top100 .diag-list details { margin-top: 4px; }
+.dsh-top100 .diag-counts { display: flex; flex-wrap: wrap; gap: 8px 24px; color: var(--t100-muted); padding: 2px 0 12px; }
+.dsh-top100 .diag-counts b { font-size: 17px; font-weight: 600; color: var(--t100-body); margin-right: 3px; }
+.dsh-top100 .diag-issue { padding: 16px 0; border-bottom: 1px solid var(--t100-line); }
+.dsh-top100 .diag-issue-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.dsh-top100 .diag-issue-heading > span { flex-shrink: 0; font-size: 12px; }
+.dsh-top100 .diag-evidence { margin-top: 10px; }
+.dsh-top100 .diag-evidence p, .dsh-top100 .diag-next p { margin: 4px 0; }
+.dsh-top100 .diag-next { border-left: 2px solid var(--t100-line); padding-left: 12px; margin: 12px 0; color: var(--t100-muted); }
+.dsh-top100 .diag-next strong { font-weight: 500; color: var(--t100-body); }
+.dsh-top100 .diag-pending { border-top: 1px solid var(--t100-line); padding-top: 12px; }
+.dsh-top100 .diag-pending p { margin: 6px 0; }
+.dsh-top100 .diag-page .diag-details { padding-top: 12px; border-top: 1px solid var(--t100-line); }
 .dsh-top100 .diag-export { display: grid; justify-items: start; gap: 8px; padding-top: 14px; border-top: 1px solid var(--t100-line); }
 .dsh-top100 .managed-list .row-actions { flex-wrap: wrap; justify-content: flex-start; }
 .dsh-top100 .job {
@@ -5089,7 +5559,8 @@ const css = `
   background: var(--t100-accent-soft);
   font-size: 13px;
 }
-.dsh-top100 .task-history > summary { cursor: pointer; font-weight: 500; }
+.dsh-top100 .task-history { background: var(--t100-surface); border: 1px solid var(--t100-line); }
+.dsh-top100 .task-history > summary { cursor: pointer; font-weight: 500; color: var(--t100-muted); }
 .dsh-top100 .task-history-list { max-height: 260px; overflow-y: auto; margin-top: 8px; }
 .dsh-top100 .task-history-item { padding: 8px 0; border: 0; border-top: 1px solid var(--t100-line); border-radius: 0; background: transparent; }
 .dsh-top100 .task-history-item > summary { cursor: pointer; font: inherit; line-height: 1.6; color: var(--t100-ink); overflow-wrap: anywhere; }
@@ -5745,9 +6216,9 @@ const zh = {
 	taskRestored: "原有依赖已恢复。",
 	taskRecoveryFailed: "自动恢复失败，请先检查并修复当前配置。",
 	taskProfileDirectory: "当前插件目录",
-	taskUninstallRestart: "请重启 DSH，使卸载生效。",
-	taskUpdateRestart: "请重启 DSH，使更新生效，再检查插件功能。",
-	taskInstallRestart: "请重启 DSH，再检查插件功能。",
+	taskUninstallRestart: "请重启，使卸载生效。",
+	taskUpdateRestart: "请重启，使更新生效，再检查插件功能。",
+	taskInstallRestart: "请重启，再检查插件功能。",
 	taskCheckConfiguration: "请先完成作者要求的配置。",
 	buildRecoveryGuide: "查看构建授权与重试指南",
 	task_install_installing: "安装中",
@@ -5787,13 +6258,13 @@ const zh = {
 	clientErrorTitle: "插件页面暂时无法显示",
 	clientErrorHint: "可重新打开页面。正在执行的安装不会因此取消，恢复后会重新读取安装状态。",
 	diagExport: "导出诊断摘要",
-	runtime_loaded: "宿主已加载",
-	"runtime_restart-required": "待重启验证",
+	runtime_loaded: "已加载",
+	"runtime_restart-required": "待重启",
 	"runtime_missing-services": "缺少必需服务",
-	runtime_failed: "宿主加载失败",
+	runtime_failed: "加载失败",
 	runtime_inactive: "未激活",
 	runtime_unknown: "未验证",
-	runtimeScope: "状态仅反映当前宿主加载情况；插件页面和实际功能需使用后确认。",
+	runtimeScope: "已加载不代表所有功能均正常，实际功能需使用后确认。",
 	runtimeDetails: "加载详情",
 	manageOptions: "更新设置",
 	managedSelfDescription: "发现、安装和管理 DSH 插件与 Skills。",
@@ -5933,7 +6404,7 @@ const zh = {
 	updateIssueStrategy: "无法确认原更新分支，请明确选择更新方式后重试。",
 	updateIssueFailed: "来源未通过检查。请查看详情，修复后重新检查。",
 	protectedManageHint: "此插件不能在这里修改，请通过原安装方式维护。",
-	localManageHint: "本地插件请在源码目录更新并重新构建，然后重启 DSH。",
+	localManageHint: "本地插件请在源码目录更新并重新构建，然后重启。",
 	maintenanceGuide: "维护说明",
 	reviewSkillInstall: "安装",
 	browseSkillUpdates: "去 Skills 目录检查更新",
@@ -6070,7 +6541,30 @@ const zh = {
 	basisShort_total: "Stars 总榜",
 	basisShort_category: "分类筛选",
 	basisShort_search: "相关性排序",
-	restart: "配置已更新；请重启 DSH，使变更生效。",
+	sourceConflict: "设置未保存，配置可能已被修改。请刷新后重试。",
+	toggleSaved: "启用设置已保存，运行状态将在刷新后确认。",
+	managedProtected: "受保护插件",
+	restartRequiredTitle: "有变更等待重启生效",
+	restartReadyHint: "完成当前对话后，可在这里重启。",
+	restartNow: "立即重启",
+	restartConfirmTitle: "确认重启",
+	restartConfirmAction: "确认重启",
+	restartCompleted: "已重启",
+	restartCompletedHint: "已恢复连接，插件运行状态已刷新。",
+	restarting: "正在重启…",
+	restartWaiting: "正在等待重新连接，恢复后将自动刷新。",
+	restartConfirm: "重启会中断当前运行的任务。确认已完成或保存工作后继续？",
+	restartBusy: "插件操作尚未完成，请稍后重试。",
+	restartFailed: "重启未能启动，请刷新状态后重试。",
+	restartTimeout: "DSH 未在一分钟内恢复。请在终端检查启动错误，并重新运行原来的 dsh web 命令。",
+	restartUnavailable_desktop: "请从 DSH 桌面应用退出并重新打开。",
+	restartUnavailable_profile: "变更属于另一个 Profile，请重启对应的 DSH 进程。",
+	restartUnavailable_disabled: "当前环境已关闭一键重启，请使用原来的启动方式重启。",
+	restartUnavailable_supervised: "请通过管理 DSH 的服务管理器重启。",
+	restartUnavailable_debugger: "请从当前调试器停止并重新启动 DSH。",
+	restartUnavailable_launcher: "当前启动方式不支持一键重启，请重新运行原来的 DSH 启动命令。",
+	restartUnavailable_remote: "一键重启仅支持本机直接访问，请在 DSH 所在机器上重启。",
+	restart: "配置已更新；请重启，使变更生效。",
 	phase_queued: "排队中",
 	phase_validating: "验证中",
 	phase_downloading: "下载中",
@@ -6167,11 +6661,11 @@ const zh = {
 	"activation_not-applicable": "请在新会话中确认 Skill 是否可用。",
 	"activation_configuration-required": "状态：已安装，完成作者要求的配置后再验证",
 	"activation_configuration-valid": "运行状态：配置可组合，当前进程尚未验证",
-	"activation_restart-required": "运行状态：需要重启后验证",
-	activation_live: "运行状态：宿主已加载",
+	"activation_restart-required": "待重启",
+	activation_live: "已加载",
 	activation_inert: "运行状态：已写入但未激活",
 	activation_broken: "运行状态：安装或配置验证失败",
-	activation_unknown: "运行状态：尚未取得运行时证据",
+	activation_unknown: "未验证",
 	skillHint: "这是 Skill，不能通过 dsh plugin 一键装进 Web profile。",
 	sourceSave: "保存地址",
 	sourceSaving: "正在保存…",
@@ -6190,7 +6684,7 @@ const zh = {
 	diagDeps: "依赖问题",
 	diagRefresh: "重新检查",
 	diagDetails: "检查详情",
-	diagScopeShort: "检查范围：配置与宿主加载",
+	diagScopeShort: "检查范围：配置与加载状态",
 	diagCatalogTitle: "榜单数据源",
 	diagInventory: "安装概览",
 	diagOfficial: "官方 Bundle",
@@ -6212,9 +6706,9 @@ const en = {
 	taskRestored: "Previous dependencies restored.",
 	taskRecoveryFailed: "Automatic recovery failed. Check and repair the current configuration first.",
 	taskProfileDirectory: "Current plugin profile directory",
-	taskUninstallRestart: "Restart DSH for removal to take effect.",
-	taskUpdateRestart: "Restart DSH to apply the update, then check the plugin.",
-	taskInstallRestart: "Restart DSH, then check the plugin.",
+	taskUninstallRestart: "Restart for removal to take effect.",
+	taskUpdateRestart: "Restart to apply the update, then check the plugin.",
+	taskInstallRestart: "Restart, then check the plugin.",
 	taskCheckConfiguration: "Complete the configuration required by the author first.",
 	buildRecoveryGuide: "Build approval and retry guide",
 	task_install_installing: "Installing",
@@ -6254,13 +6748,13 @@ const en = {
 	clientErrorTitle: "The plugin page could not be displayed",
 	clientErrorHint: "Reopen this page to recover. Running installations are not cancelled; their status will be loaded again.",
 	diagExport: "Export diagnostic summary",
-	runtime_loaded: "Host loaded",
-	"runtime_restart-required": "Restart to verify",
+	runtime_loaded: "Loaded",
+	"runtime_restart-required": "Restart required",
 	"runtime_missing-services": "Required services missing",
-	runtime_failed: "Host load failed",
+	runtime_failed: "Load failed",
 	runtime_inactive: "Inactive",
 	runtime_unknown: "Unverified",
-	runtimeScope: "Status reflects current host loading only. Verify plugin pages and features by using them.",
+	runtimeScope: "Loaded does not guarantee that every feature works. Verify features by using them.",
 	runtimeDetails: "Loading details",
 	manageOptions: "Update settings",
 	managedSelfDescription: "Discover, install and manage DSH plugins and Skills.",
@@ -6506,7 +7000,7 @@ const en = {
 	willRunScriptsPrefix: "Will run",
 	buildScriptsUnit: "npm lifecycle script(s)",
 	noBuildScripts: "No npm lifecycle scripts detected",
-	restartAfterInstall: "Restart to verify",
+	restartAfterInstall: "Restart required",
 	noRestartRequired: "No restart required",
 	viewInstallTechnicalEvidence: "Source and verification details",
 	viewTechnicalEvidence: "View technical evidence",
@@ -6537,7 +7031,30 @@ const en = {
 	basisShort_total: "Stars ranking",
 	basisShort_category: "Category filter",
 	basisShort_search: "Relevance order",
-	restart: "Configuration updated. Restart DSH to apply the changes.",
+	sourceConflict: "Settings were not saved. The configuration may have changed; refresh and retry.",
+	toggleSaved: "Enable setting saved. Runtime status will be checked after refresh.",
+	managedProtected: "Protected plugin",
+	restartRequiredTitle: "Changes pending restart",
+	restartReadyHint: "Finish your current work, then restart here.",
+	restartNow: "Restart now",
+	restartConfirmTitle: "Confirm restart",
+	restartConfirmAction: "Confirm restart",
+	restartCompleted: "Restarted",
+	restartCompletedHint: "Connection restored and plugin runtime status refreshed.",
+	restarting: "Restarting…",
+	restartWaiting: "Waiting to reconnect. This page will refresh automatically.",
+	restartConfirm: "Restarting interrupts running tasks. Have you finished or saved your work?",
+	restartBusy: "Wait for plugin operations to finish, then retry.",
+	restartFailed: "Restart could not start. Refresh the status and retry.",
+	restartTimeout: "DSH did not recover within a minute. Check startup errors in your terminal and run your original dsh web command again.",
+	restartUnavailable_desktop: "Quit and reopen the DSH desktop app.",
+	restartUnavailable_profile: "Restart the DSH process running the affected profile.",
+	restartUnavailable_disabled: "One-click restart is disabled. Use your original startup method.",
+	restartUnavailable_supervised: "Restart DSH through its service manager.",
+	restartUnavailable_debugger: "Stop and restart DSH from your debugger.",
+	restartUnavailable_launcher: "This launcher does not support one-click restart. Run your original DSH command again.",
+	restartUnavailable_remote: "One-click restart requires direct local access. Restart on the DSH machine.",
+	restart: "Configuration updated. Restart to apply the changes.",
 	phase_queued: "Queued",
 	phase_validating: "Validating",
 	phase_downloading: "Downloading",
@@ -6634,11 +7151,11 @@ const en = {
 	"activation_not-applicable": "Check that the Skill is available in a new session.",
 	"activation_configuration-required": "Status: installed; complete the author's configuration before verification",
 	"activation_configuration-valid": "Runtime: profile composes; current process not verified",
-	"activation_restart-required": "Runtime: restart required before verification",
-	activation_live: "Runtime: host loaded",
+	"activation_restart-required": "Restart required",
+	activation_live: "Loaded",
 	activation_inert: "Runtime: written but inactive",
 	activation_broken: "Runtime: installation or configuration check failed",
-	activation_unknown: "Runtime: no authoritative evidence yet",
+	activation_unknown: "Unverified",
 	skillHint: "This is a Skill and cannot be installed into the Web profile with dsh plugin.",
 	sourceSave: "Save URL",
 	sourceSaving: "Saving…",
@@ -6657,7 +7174,7 @@ const en = {
 	diagDeps: "Dependency issues",
 	diagRefresh: "Check again",
 	diagDetails: "Check details",
-	diagScopeShort: "Checks configuration and host loading",
+	diagScopeShort: "Checks configuration and loading state",
 	diagCatalogTitle: "Catalog source",
 	diagInventory: "Inventory",
 	diagOfficial: "Official bundles",
@@ -6697,6 +7214,7 @@ function apply(ctx) {
 	}, "dsh-top100: dictionaries");
 	ctx.effect(() => ensureCss(), "dsh-top100: css");
 	const t = ctx.locale.bind(NS);
+	ctx.effect(() => installNavIcon(() => t("nav")), "dsh-top100: nav icon");
 	ctx.slots.inject("settings.section", () => ctx.slots.register({
 		name: "settings.section",
 		id: "dsh-top100",
@@ -6708,6 +7226,21 @@ function apply(ctx) {
 		t,
 		children: (0, react.createElement)(RankingsPage, { t })
 	})));
+	ctx.inject?.(["configForms"], (scoped) => {
+		const settings = scoped.configForms.get(NS);
+		scoped.slots.inject("plugins.bundle.config", () => scoped.slots.register({
+			name: "plugins.bundle.config",
+			key: "@evaldock/dsh-top100-plugin",
+			locale: NS,
+			inject: () => ({ t })
+		}, () => (0, react.createElement)(PluginErrorBoundary, {
+			t,
+			children: (0, react.createElement)(SettingsCard, {
+				t,
+				settings
+			})
+		})));
+	});
 	ctx.inject?.(["settingsScope"], (scoped) => {
 		const settings = scoped.settingsScope.bind({ namespace: NS });
 		scoped.slots.inject("plugins.bundle.config", () => scoped.slots.register({

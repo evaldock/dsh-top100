@@ -6,6 +6,7 @@ import { createElement as h } from "react";
 import { PluginErrorBoundary } from "./ErrorBoundary.js";
 import { RankingsPage } from "./RankingsPage.js";
 import { SettingsCard, type Top100SettingsScope } from "./SettingsCard.js";
+import { installNavIcon } from "./settings-nav-icon.js";
 import { css } from "./styles.js";
 import { en, zh, type Translate } from "./locales.js";
 
@@ -24,7 +25,7 @@ interface SlotsService {
 
 interface ClientContext {
   effect(callback: () => (() => void) | void, label?: string): void;
-  inject?(services: string[], callback: (scoped: { slots: SlotsService; settingsScope: { bind(spec: { namespace: string }): Top100SettingsScope } }) => void): void;
+  inject?(services: string[], callback: (scoped: { slots: SlotsService; settingsScope: { bind(spec: { namespace: string }): Top100SettingsScope }; configForms: { get(entryId: string): Top100SettingsScope } }) => void): void;
   locale: LocaleService;
   slots: SlotsService;
 }
@@ -50,6 +51,7 @@ export function apply(ctx: ClientContext): void {
   }, "dsh-top100: dictionaries");
   ctx.effect(() => ensureCss(), "dsh-top100: css");
   const t = ctx.locale.bind(NS);
+  ctx.effect(() => installNavIcon(() => t("nav")), "dsh-top100: nav icon");
 
   ctx.slots.inject("settings.section", () =>
     ctx.slots.register(
@@ -64,6 +66,15 @@ export function apply(ctx: ClientContext): void {
       () => h(PluginErrorBoundary, { t, children: h(RankingsPage, { t }) }),
     ),
   );
+
+  // DSH 0.1.7 replaced settingsScope.bind with entry-owned configForms.get.
+  ctx.inject?.(["configForms"], (scoped) => {
+    const settings = scoped.configForms.get(NS);
+    scoped.slots.inject("plugins.bundle.config", () =>
+      scoped.slots.register({ name: "plugins.bundle.config", key: "@evaldock/dsh-top100-plugin", locale: NS, inject: () => ({ t }) },
+        () => h(PluginErrorBoundary, { t, children: h(SettingsCard, { t, settings }) })),
+    );
+  });
 
   ctx.inject?.(["settingsScope"], (scoped) => {
     const settings = scoped.settingsScope.bind({ namespace: NS });

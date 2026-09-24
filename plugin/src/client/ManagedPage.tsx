@@ -1,3 +1,4 @@
+import { RankTrustMark } from "./RankMark.js";
 import { taskPhaseKey, taskProgressKey } from "./install-presentation.js";
 import { TaskDetails } from "./TaskDetails.js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -29,6 +30,8 @@ export function ManagedPage({ t, tracking, retryUpdate, onRetryConsumed, initial
   onBrowseSkills?: () => void;
 }) {
   const [draft, setDraft] = useState(initialQuery);
+  const [toggling, setToggling] = useState<string | null>(null);
+  const toggleLock = useRef(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [query, setQuery] = useState(initialQuery);
   const [data, setData] = useState<ManagedListResponse | null>(null);
@@ -144,14 +147,17 @@ export function ManagedPage({ t, tracking, retryUpdate, onRetryConsumed, initial
   }
 
   async function toggle(item: ManagedPlugin): Promise<void> {
+    if (toggleLock.current) return;
+    toggleLock.current = true; setToggling(item.name); setError(null); setNotice(null);
     setRetryNames(null);
     try {
       await readJson("/dsh-top100/toggle", {
         method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name: item.name, enabled: !item.enabled }),
       });
-      setNotice(t("restart"));
+      setNotice(t("toggleSaved"));
       await load();
     } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
+    finally { toggleLock.current = false; setToggling(null); }
   }
 
   async function migrateSources(): Promise<void> {
@@ -174,7 +180,7 @@ export function ManagedPage({ t, tracking, retryUpdate, onRetryConsumed, initial
     } finally { migrationLock.current = false; setMigrating(false); }
   }
 
-  const operationBlocked = !tracking.ready || busy !== null || preparing || submitting || migrating || review !== null;
+  const operationBlocked = !tracking.ready || busy !== null || preparing || submitting || migrating || review !== null || toggling !== null;
   const hasUpdateSettings = data?.items.some((item) => item.kind === "bundle" && !item.protected && !item.local) ?? false;
   const updates = data?.items.filter((item) => item.kind === "bundle" && !item.protected && !item.local
     && (updateStrategy === "latest" || item.updateAvailable || !item.latest)) ?? [];
@@ -243,47 +249,57 @@ export function ManagedPage({ t, tracking, retryUpdate, onRetryConsumed, initial
             : data?.items.some((other) => other.name !== item.name && other.name.replace(/^@[^/]+\//, "") === shortName) ? item.name : shortName;
           const versionsKnown = Boolean(item.version && item.latest
             && parseSemver(item.version.replace(/^v/, "")) && parseSemver(item.latest.replace(/^v/, "")));
+          const statusLabel = t(item.kind === "skill" ? "installed" : item.runtime ? `runtime_${item.runtime.state}` : `activation_${item.activationState}`);
+          const loaded = item.kind === "bundle" && (item.runtime ? item.runtime.state === "loaded" : item.activationState === "live");
           const noUpdate = updateStrategy === "preserve" && versionsKnown && !item.updateAvailable;
           return (
-            <article key={`${item.kind}-${item.name}`}>
-              <details className="managed-details">
-                <summary>
-                  <span className="managed-title">
-                    <span className={`dot ${item.kind === "skill" ? "off" : item.activationState === "live" ? "live" : item.activationState === "broken" ? "broken" : item.activationState === "restart-required" ? "pending" : "off"}`} aria-hidden="true" />
-                    <span title={item.name}>{displayName}</span>
-                  </span>
-                  <span className="managed-disclosure"><span>{t(item.protected ? "viewDetails" : "manage")}</span><Chevron /></span>
-                <div className="facts">
-                  {item.kind === "skill" ? <span className="badge">{t("skillKind")}</span> : null}
-                  <span className={`badge activation-${item.activationState}`} title={t("runtimeScope")}>{t(item.kind === "skill" ? "installed" : item.runtime ? `runtime_${item.runtime.state}` : `activation_${item.activationState}`)}</span>
-                  {item.version ? <span>{t("version")}: {item.version}</span> : null}
-                  {item.updateAvailable ? <span className="badge warn">{t("updateAvailable")}</span> : null}
-                  {item.updateError ? <span className="badge warn">{t("updateStatus_failed")}</span> : null}
-                </div>
-                </summary>
-                <div className="managed-body">
-                <p className="desc">{descriptionFor(item)}</p>
-                {item.updateAvailable && item.latest ? <p className="lede">{t("updateAvailable")}: {item.latest}</p> : null}
-                {item.updateError ? <details><summary>{t("updateCheckDetails")}</summary><p className="lede">{item.updateError}</p></details> : null}
-                {item.kind === "skill" && item.modificationState ? <p className="lede">{t(`skillModification_${item.modificationState}`)}</p> : null}
-                {item.runtime?.missingServices?.length ? <details><summary>{t("runtimeDetails")}</summary><code>{item.runtime.missingServices.join(", ")}</code></details> : null}
-                {item.kind === "bundle" && (item.protected || item.local) ? <p className="lede">{t(item.protected ? "protectedManageHint" : "localManageHint")}
-                </p> : null}
-                {item.kind === "skill" ? <p className="lede">{t("skillReinstallHint")}</p> : null}
-              <div className="managed-footer">
-              {!item.protected || job ? <div className="actions row-actions">
-                {job ? <div className="job"><TaskDetails job={job} t={t} /></div> : null}
-                {job?.action === "update" && (job.phase === "failed" || job.phase === "cancelled") ? <button type="button" disabled={item.protected || item.local || operationBlocked} onClick={() => void prepareUpdates([item.name])}>{t("retry")}</button> : null}
-                {item.kind === "bundle" ? <button type="button" disabled={item.protected || operationBlocked} onClick={() => void toggle(item)}>{item.enabled ? t("disable") : t("enable")}</button> : null}
-                {item.kind === "bundle" && !item.local && !noUpdate ? <button type="button" disabled={item.protected || operationBlocked || data?.sourceMigrationRequired === true} onClick={() => void prepareUpdates([item.name])}>{t(item.updateAvailable ? "update" : "checkUpdates")}</button> : null}
-                {item.kind === "skill" && onBrowseSkills ? <button type="button" disabled={operationBlocked} onClick={onBrowseSkills}>{t("browseSkillUpdates")}</button> : null}
-                <button type="button" className="danger" disabled={item.protected || operationBlocked || (item.kind === "bundle" && data?.sourceMigrationRequired === true)} onClick={() => void manage("uninstall", [item.name], item.kind)}>{t("uninstall")}</button>
-              </div> : null}
-                <div className="managed-links">
-                  {item.url ? <a href={item.url} target="_blank" rel="noreferrer">{t("viewProject")} ↗</a> : null}
-                  {item.protected ? <a href="https://www.evaldock.ai/top100/?page=dsh#dsh" target="_blank" rel="noreferrer">{t("maintenanceGuide")} ↗</a> : null}
-                </div>
+            <article className="managed-item" key={`${item.kind}-${item.name}`}>
+              <div className="managed-item-main">
+              <div className="managed-item-heading">
+                <span className="managed-item-icon" aria-hidden="true">{displayName === "dsh-top100" ? <RankTrustMark /> : item.kind === "skill" ? "✦" : "▦"}</span>
+                <div><div className="managed-item-title"><h3 title={item.name}>{displayName}</h3>
+                  <span className="managed-version">{item.version ? `v${item.version.replace(/^v/, "")}` : t("installed")}{item.kind === "skill" ? ` · ${t("skillKind")}` : ""}</span></div>
+                  </div>
               </div>
+              <p className="desc managed-description">{descriptionFor(item)}</p>
+              </div>
+              <div className="managed-item-footer">
+              <div className="managed-item-status">
+                {!loaded ? <span className={`badge activation-${item.activationState}`} title={t("runtimeScope")}>
+                  <span className={`dot ${item.kind === "skill" ? "off" : item.activationState === "live" ? "live" : item.activationState === "broken" ? "broken" : item.activationState === "restart-required" ? "pending" : "off"}`} aria-hidden="true" />
+                  {statusLabel}
+                </span> : null}
+                {item.kind === "bundle" ? <button type="button" role="switch" className="managed-switch" aria-checked={item.enabled}
+                  aria-label={`${t(item.enabled ? "disable" : "enable")} ${item.name}`} title={t(item.protected ? "protectedManageHint" : item.enabled ? "disable" : "enable")}
+                  disabled={item.protected || operationBlocked} onClick={() => void toggle(item)}><span /></button> : null}
+              </div>
+              <div className="managed-item-actions">
+                {item.protected ? <span className="managed-version">{t("managedProtected")}</span> : <>
+                  {item.kind === "bundle" && !item.local ? noUpdate ? <span className="managed-version">{t("noUpdateAvailable")}</span>
+                    : <button type="button" className={item.updateAvailable ? "primary" : undefined} disabled={operationBlocked || data?.sourceMigrationRequired === true} onClick={() => void prepareUpdates([item.name])}>{t(item.updateAvailable ? "update" : "checkUpdates")}{item.updateAvailable && item.latest ? ` · v${item.latest.replace(/^v/, "")}` : ""}</button> : null}
+                  {item.kind === "skill" && onBrowseSkills ? <button type="button" disabled={operationBlocked} onClick={onBrowseSkills}>{t("browseSkillUpdates")}</button> : null}
+                  <button type="button" className="danger" disabled={operationBlocked || (item.kind === "bundle" && data?.sourceMigrationRequired === true)} onClick={() => void manage("uninstall", [item.name], item.kind)}>{t("uninstall")}</button>
+                </>}
+              </div>
+              </div>
+              {job ? <div className="job"><TaskDetails job={job} t={t} /></div> : null}
+              {job?.action === "update" && (job.phase === "failed" || job.phase === "cancelled") ? <button type="button" disabled={item.protected || item.local || operationBlocked} onClick={() => void prepareUpdates([item.name])}>{t("retry")}</button> : null}
+              {item.updateError ? <p className="managed-update-error">{t("updateStatus_failed")}</p> : null}
+              <details className="managed-details">
+                <summary><span>{t("viewDetails")}</span><Chevron /></summary>
+                <div className="managed-body">
+                  <p className="managed-package">{item.name}</p>
+                  {item.kind === "bundle" ? <div><strong>{statusLabel}</strong><p className="lede">{t("runtimeScope")}</p></div> : null}
+                  <p className="desc">{descriptionFor(item)}</p>
+                  {item.updateError ? <p className="lede">{item.updateError}</p> : null}
+                  {item.kind === "skill" && item.modificationState ? <p className="lede">{t(`skillModification_${item.modificationState}`)}</p> : null}
+                  {item.runtime?.missingServices?.length ? <div><strong>{t("runtimeDetails")}</strong><p><code>{item.runtime.missingServices.join(", ")}</code></p></div> : null}
+                  {item.kind === "bundle" && (item.protected || item.local) ? <p className="lede">{t(item.protected ? "protectedManageHint" : "localManageHint")}</p> : null}
+                  {item.kind === "skill" ? <p className="lede">{t("skillReinstallHint")}</p> : null}
+                  <div className="managed-links">
+                    {item.url ? <a href={item.url} target="_blank" rel="noreferrer">{t("viewProject")} ↗</a> : null}
+                    {item.protected ? <a href="https://www.evaldock.ai/top100/?page=dsh#dsh" target="_blank" rel="noreferrer">{t("maintenanceGuide")} ↗</a> : null}
+                  </div>
                 </div>
               </details>
             </article>

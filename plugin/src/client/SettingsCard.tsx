@@ -4,7 +4,7 @@ import type { Translate } from "./locales.js";
 export interface Top100SettingsScope {
   getSnapshot(): { status: string; value?: { dataUrl: string }; writable: boolean };
   subscribe(listener: () => void): () => void;
-  set(field: string, value: unknown): Promise<void>;
+  set(field: string, value: unknown): Promise<void | boolean>;
 }
 
 interface SettingsCardProps {
@@ -32,7 +32,8 @@ export function SettingsCard({ t, settings }: SettingsCardProps) {
       try {
         const url = new URL(draft.trim());
         if (!["http:", "https:"].includes(url.protocol)) throw new Error(t("sourceInvalid"));
-        await settings.set("dataUrl", draft.trim().replace(/\/+$/, ""));
+        const accepted = await settings.set("dataUrl", draft.trim().replace(/\/+$/, ""));
+        if (accepted === false) throw new Error(t("sourceConflict"));
         if (mounted.current) { setDraft(null); setMessage(t("sourceSaved")); }
       } catch (error) {
         if (mounted.current) setMessage(error instanceof Error ? error.message : String(error));

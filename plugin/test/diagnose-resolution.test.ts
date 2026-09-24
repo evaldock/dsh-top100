@@ -62,6 +62,19 @@ describe("diagnostic host package lookup", () => {
     expect(report.bundles[0].catalogName).toBe(version === "0.5.0" ? fullName : null);
     expect(report.findings.some((finding) => finding.code === "bundle-unlisted")).toBe(version !== "0.5.0");
   });
+  it("uses verified repository identity to distinguish forks sharing one npm name", async () => {
+    const { profile } = fixture();
+    const name = "@acme/theme", fullName = "acme/theme-repo";
+    writeFileSync(join(profile, "package.json"), JSON.stringify({ dependencies: { [name]: "0.5.0" }, dsh: { profile: { bundles: [name] } } }));
+    packageAt(join(profile, "node_modules", name), name, "0.5.0", { repository: `https://github.com/${fullName}` });
+    recordInstallProvenance({ profile: "web", profileDirectory: profile, dataUrl: "" }, {
+      approvalToken: "test", expiresAt: 1, fullName, profile: "web", kind: "bundle", lifecycleScripts: [], risks: [], requiresExplicitApproval: false, activationExpectation: "restart-required",
+      provenance: { source: "npm", requestedTarget: name, resolvedTarget: `${name}@0.5.0`, packageName: name, version: "0.5.0", commit: null, integrity: "sha512-test", verifiedAt: 1, repositoryIdentity: "matched", repositoryUrl: `https://github.com/${fullName}` },
+    });
+    const entries = [fullName, "fork/theme-repo"].map((repo) => ({ fullName: repo, type: "cordis-plugin", install: { packageName: name } } as RankingEntry));
+    const report = await buildDiagnosticReport("web", { profileDir: profile, document: { ...document, rankings: { total: entries, hot: [], rising: [] } } });
+    expect(report.bundles[0].catalogName).toBe(fullName);
+  });
   it("finds npm/npx hoisted inbox bundles and peer fallbacks without requiring their entrypoints", async () => {
     const { profile, hostModules } = fixture();
     const base = join(hostModules, "@deepseek-ai/dsh-base");

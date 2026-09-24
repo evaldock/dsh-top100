@@ -51,6 +51,13 @@ afterEach(async () => {
 });
 
 describe("optional Top100 settings with the real DSH rc.2 provider", () => {
+  it("leaves Config-derived forms to the DSH 0.1.7 host", () => {
+    const resolved = config();
+    const scope = { get: () => ({ describe: () => [] }) };
+    const ctx = { inject(_services: string[], callback: (scoped: unknown) => void) { callback(scope); } } as unknown as Context;
+    expect(() => installTop100Settings(ctx, resolved)).not.toThrow();
+    expect(resolved.dataUrl).toBe(entryUrl);
+  });
   it("keeps the composition entry and active owner when the optional provider is absent", async () => {
     const ctx = new Context(), resolved = config();
     const active = await owner(ctx, resolved);

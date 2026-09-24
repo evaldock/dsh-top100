@@ -2,6 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { setPackageEnabled } from "../src/host/patch-toggle.js";
 import { buildDiagnosticReport } from "../src/host/diagnose.js";
 import type { RankingsDocument } from "../src/shared/types.js";
 import { readRuntimeStatus, type HostRuntimeStatus } from "../src/host/runtime-status.js";
@@ -200,4 +201,46 @@ it.each([
   const report = await buildDiagnosticReport('web',{profileDir:directory,document:emptyCatalog,now:Date.parse(emptyCatalog.generatedAt)});
   expect(report.bundles[0].enabled).toBe(enabled);
   expect(report.patch.disables).toEqual(disables);
+});
+
+
+describe("DSH multi-patch and catalog compatibility", () => {
+  function fixture(patch: unknown = ["first.yml", "second.yml"]) {
+    const directory = temporaryProfile();
+    const target = join(directory, "node_modules", "dshmarket");
+    mkdirSync(target, { recursive: true });
+    writeFileSync(join(directory, "package.json"), JSON.stringify({ dependencies: { dshmarket: "1.61.0" }, dsh: { profile: { bundles: ["dshmarket"] } } }));
+    writeFileSync(join(target, "package.json"), JSON.stringify({ name: "dshmarket", version: "1.61.0", repository: "git+https://github.com/dsh-market/dsh-market.git", dsh: { bundle: { patch } } }));
+    writeFileSync(join(target, "first.yml"), '- insert: [{ id: first, name: dshmarket }]\n');
+    writeFileSync(join(target, "second.yml"), '- insert: [{ id: second, name: dshmarket/extra }]\n- id: first\n  disabled: true\n');
+    return { directory, target };
+  }
+  it("reads all declared files in order and toggles their combined entries", async () => {
+    const { directory } = fixture();
+    const options = { profileDir: directory, document: emptyCatalog, now: Date.parse(emptyCatalog.generatedAt) };
+    const before = await buildDiagnosticReport("web", options);
+    expect(before.bundles[0].error).toBeNull();
+    expect(before.bundles[0].entries).toEqual(["first", "second"]);
+    expect(before.bundles[0].enabled).toBe(true);
+    expect(setPackageEnabled("web", "dshmarket", false, directory).ok).toBe(true);
+    expect((await buildDiagnosticReport("web", options)).bundles[0].enabled).toBe(false);
+    expect(setPackageEnabled("web", "dshmarket", true, directory).ok).toBe(true);
+    expect((await buildDiagnosticReport("web", options)).bundles[0].enabled).toBe(true);
+  });
+  it.each([[], ["first.yml", "missing.yml"], ["first.yml", 42]].map((patch) => [patch]))("does not hide invalid multi-file declarations: %j", async (patch) => {
+    const { directory } = fixture(patch);
+    const result = await buildDiagnosticReport("web", { profileDir: directory, document: emptyCatalog });
+    expect(result.bundles[0].errorCode).toBe("patch-invalid");
+  });
+  it("matches a compact catalog through repository identity, without overriding conflicting package identity", async () => {
+    const { directory } = fixture();
+    const entry = { fullName: "dsh-market/dsh-market", name: "dsh-market" } as RankingsDocument["rankings"]["total"][number];
+    const document = { ...emptyCatalog, rankings: { ...emptyCatalog.rankings, total: [entry] } };
+    const matched = await buildDiagnosticReport("web", { profileDir: directory, document });
+    expect(matched.bundles[0].catalogName).toBe(entry.fullName);
+    expect(matched.findings.some((finding) => finding.code === "bundle-unlisted")).toBe(false);
+    entry.install = { packageName: "another-package" };
+    const conflict = await buildDiagnosticReport("web", { profileDir: directory, document });
+    expect(conflict.bundles[0].catalogName).toBeNull();
+  });
 });

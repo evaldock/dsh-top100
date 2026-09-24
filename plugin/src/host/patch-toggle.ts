@@ -55,10 +55,13 @@ export function parseInsertedIds(source: string): string[] {
 export function bundlePatchEntries(packageDirectory: string): { path: string; ids: string[]; patches: DshPatch[] } {
   const manifest = JSON.parse(readFileSync(join(packageDirectory, "package.json"), "utf8")) as { dsh?: { bundle?: { patch?: unknown } } };
   const declared = manifest?.dsh?.bundle?.patch;
-  if (typeof declared !== "string" || !declared.trim()) throw new Error("缺少 dsh.bundle.patch 声明");
-  const path = join(packageDirectory, declared);
-  const patches = readDshPatch(readFileSync(path, "utf8"));
-  return { path, ids: [...new Set(insertedRows(patches).map((row) => row.id).filter((id): id is string => typeof id === "string"))], patches };
+  const files = typeof declared === "string" ? [declared] : Array.isArray(declared) ? declared : [];
+  if (!files.length || files.some((file) => typeof file !== "string" || !file.trim())) throw new Error("缺少或无效的 dsh.bundle.patch 声明");
+  // DSH applies multiple declared patch files in order, including later edits.
+  // Read all of them before returning; a bad later file must not look valid.
+  const paths = files.map((file) => join(packageDirectory, file));
+  const patches = paths.flatMap((path) => readDshPatch(readFileSync(path, "utf8")));
+  return { path: paths[0]!, ids: [...new Set(insertedRows(patches).map((row) => row.id).filter((id): id is string => typeof id === "string"))], patches };
 }
 function hostInstallDirectory(): string | null {
   if (!process.argv[1]) return null;

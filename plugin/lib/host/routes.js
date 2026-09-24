@@ -1,4 +1,5 @@
 /** Host HTTP routes for catalog, install, and status. */
+import { prepareRestart, trustedRestartRequest } from "./restart.js";
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -23,6 +24,9 @@ import { createUpdatePreflight, validateUpdateApprovals, assertUpdateUnchanged, 
 import { assertProvenanceLedgerReadable, recordInstallProvenance, readSkillProvenance, readBundleProvenance } from "./provenance.js";
 import { MAX_UPDATE_BATCH_SIZE } from "../shared/types.js";
 import { isPluginCategoryId } from "../shared/categories.js";
+const BOOT_ID = `${process.pid}-${Math.floor((Date.now() - process.uptime() * 1000) / 1000)}`;
+let restartPending = false;
+let activeMutations = 0;
 const MAX_BATCH_SIZE = 20;
 // Twenty scoped npm names plus their approval records can exceed the small-route default.
 const MAX_BATCH_BODY_BYTES = 32 * 1024;
@@ -721,6 +725,25 @@ export function mountRoutes(host, config, commandRuntime) {
     if (config.profileDirectory === undefined && !isDshProfileName(config.profile)) {
         throw new Error(`dsh-top100: invalid profile name ${JSON.stringify(config.profile)}`);
     }
+    const registerRoute = (route) => host.webServer.register({ ...route, async handler(request, response) {
+            if (restartPending && request.method === "POST" && route.path !== "/dsh-top100/restart") {
+                sendJson(response, 409, { error: "DSH is restarting" });
+                return;
+            }
+            const mutation = request.method === "POST" && route.path !== "/dsh-top100/restart";
+            if (mutation)
+                activeMutations += 1;
+            try {
+                await route.handler(request, response);
+            }
+            finally {
+                if (mutation)
+                    activeMutations -= 1;
+            }
+        } });
+    const restartStatus = (request) => trustedRestartRequest(request, false)
+        ? host.restartCapability?.() ?? { available: false, reason: "launcher" }
+        : { available: false, reason: "remote" };
     const initialInstalled = readInstalled(config.profile, config.profileDirectory);
     const toggled = new Set();
     const observeRuntime = (bundles) => {
@@ -733,7 +756,38 @@ export function mountRoutes(host, config, commandRuntime) {
         }))) ?? {};
     };
     const disposers = [
-        host.webServer.register({
+        registerRoute({
+            kind: "exact", path: "/dsh-top100/restart",
+            async handler(request, response) {
+                if (request.method !== "POST" || !trustedRestartRequest(request)) {
+                    sendJson(response, 403, { error: "same-origin loopback POST required" });
+                    return;
+                }
+                if (!host.restartCapability?.().available) {
+                    sendJson(response, 403, { error: "restart unavailable" });
+                    return;
+                }
+                if (restartPending || activeMutations > 0 || progress.active || [...jobs.values()].some((job) => !TERMINAL_PHASES.includes(job.phase))) {
+                    sendJson(response, 409, { error: "wait for plugin operations to finish" });
+                    return;
+                }
+                restartPending = true;
+                try {
+                    const handoff = await prepareRestart(request.socket.localPort ?? 0);
+                    response.once("finish", () => { void Promise.resolve(handoff.commit()).catch(() => { restartPending = false; }); });
+                    response.once("close", () => { if (!response.writableFinished) {
+                        handoff.cancel();
+                        restartPending = false;
+                    } });
+                    sendJson(response, 202, { ok: true, bootId: BOOT_ID });
+                }
+                catch {
+                    restartPending = false;
+                    sendJson(response, 503, { error: "restart helper could not start; DSH is still running" });
+                }
+            },
+        }),
+        registerRoute({
             kind: "exact",
             path: "/dsh-top100/status",
             handler(request, response) {
@@ -749,6 +803,11 @@ export function mountRoutes(host, config, commandRuntime) {
                 }
                 sendJson(response, 200, {
                     ok: true,
+                    bootId: BOOT_ID,
+                    restart: restartStatus(request),
+                    restartPending,
+                    restartRequired: toggled.size > 0 || !isDeepStrictEqual(initialInstalled, readInstalled(config.profile, config.profileDirectory))
+                        || [...jobs.values()].some((job) => job.profile === config.profile && job.requiresRestart),
                     name: "dsh-top100",
                     version: pluginVersion(),
                     dataUrl: config.dataUrl,
@@ -763,21 +822,21 @@ export function mountRoutes(host, config, commandRuntime) {
                 });
             },
         }),
-        host.webServer.register({
+        registerRoute({
             kind: "exact",
             path: "/dsh-top100/progress",
             handler(_request, response) {
                 sendJson(response, 200, progress);
             },
         }),
-        host.webServer.register({
+        registerRoute({
             kind: "exact",
             path: "/dsh-top100/installed",
             handler(_request, response) {
                 sendJson(response, 200, { installed: readInstalled(config.profile, config.profileDirectory) });
             },
         }),
-        host.webServer.register({
+        registerRoute({
             kind: "exact",
             path: "/dsh-top100/rankings",
             async handler(request, response) {
@@ -877,7 +936,7 @@ export function mountRoutes(host, config, commandRuntime) {
                 }
             },
         }),
-        host.webServer.register({
+        registerRoute({
             kind: "exact",
             path: "/dsh-top100/install-preflight",
             async handler(request, response) {
@@ -937,7 +996,7 @@ export function mountRoutes(host, config, commandRuntime) {
                 }
             },
         }),
-        host.webServer.register({
+        registerRoute({
             kind: "exact",
             path: "/dsh-top100/catalog-entry",
             async handler(request, response) {
@@ -959,7 +1018,7 @@ export function mountRoutes(host, config, commandRuntime) {
                 }
             },
         }),
-        host.webServer.register({
+        registerRoute({
             kind: "exact",
             path: "/dsh-top100/install-jobs",
             handler(request, response) {
@@ -973,7 +1032,7 @@ export function mountRoutes(host, config, commandRuntime) {
                 sendJson(response, snapshot ? 200 : 404, snapshot ?? { error: "batch not found" });
             },
         }),
-        host.webServer.register({
+        registerRoute({
             kind: "exact",
             path: "/dsh-top100/cancel-submission",
             async handler(request, response) {
@@ -998,7 +1057,7 @@ export function mountRoutes(host, config, commandRuntime) {
                 }
             },
         }),
-        host.webServer.register({
+        registerRoute({
             kind: "exact",
             path: "/dsh-top100/cancel",
             async handler(request, response) {
@@ -1019,7 +1078,7 @@ export function mountRoutes(host, config, commandRuntime) {
                 }
             },
         }),
-        host.webServer.register({
+        registerRoute({
             kind: "exact",
             path: "/dsh-top100/install-batch",
             async handler(request, response) {
@@ -1058,7 +1117,7 @@ export function mountRoutes(host, config, commandRuntime) {
                 }
             },
         }),
-        host.webServer.register({
+        registerRoute({
             kind: "exact",
             path: "/dsh-top100/retry",
             async handler(request, response) {
@@ -1092,7 +1151,7 @@ export function mountRoutes(host, config, commandRuntime) {
                 }
             },
         }),
-        host.webServer.register({
+        registerRoute({
             kind: "exact",
             path: "/dsh-top100/cancel-all",
             handler(request, response) {
@@ -1108,7 +1167,7 @@ export function mountRoutes(host, config, commandRuntime) {
                 sendJson(response, 200, { cancelled });
             },
         }),
-        host.webServer.register({
+        registerRoute({
             kind: "exact",
             path: "/dsh-top100/managed",
             async handler(request, response) {
@@ -1159,7 +1218,7 @@ export function mountRoutes(host, config, commandRuntime) {
                 }
             },
         }),
-        host.webServer.register({
+        registerRoute({
             kind: "exact",
             path: "/dsh-top100/toggle",
             async handler(request, response) {
@@ -1189,7 +1248,7 @@ export function mountRoutes(host, config, commandRuntime) {
                 }
             },
         }),
-        host.webServer.register({
+        registerRoute({
             kind: "exact",
             path: "/dsh-top100/source-migration",
             async handler(request, response) {
@@ -1219,7 +1278,7 @@ export function mountRoutes(host, config, commandRuntime) {
                 }
             },
         }),
-        host.webServer.register({
+        registerRoute({
             kind: "exact",
             path: "/dsh-top100/update-preflight-session",
             async handler(request, response) {
@@ -1250,7 +1309,7 @@ export function mountRoutes(host, config, commandRuntime) {
                 }
             },
         }),
-        host.webServer.register({
+        registerRoute({
             kind: "exact",
             path: "/dsh-top100/update-preflight",
             async handler(request, response) {
@@ -1320,7 +1379,7 @@ export function mountRoutes(host, config, commandRuntime) {
                 }
             },
         }),
-        host.webServer.register({
+        registerRoute({
             kind: "exact",
             path: "/dsh-top100/manage",
             async handler(request, response) {
@@ -1414,7 +1473,7 @@ export function mountRoutes(host, config, commandRuntime) {
                 }
             },
         }),
-        host.webServer.register({
+        registerRoute({
             kind: "exact",
             path: "/dsh-top100/diagnose",
             async handler(request, response) {
@@ -1430,7 +1489,7 @@ export function mountRoutes(host, config, commandRuntime) {
                 }
             },
         }),
-        host.webServer.register({
+        registerRoute({
             kind: "exact",
             path: "/dsh-top100/install",
             async handler(request, response) {

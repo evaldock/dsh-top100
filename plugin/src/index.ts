@@ -5,9 +5,11 @@
 
 import type { Context } from "@deepseek-ai/cordis";
 import z from "@deepseek-ai/schemastery";
-import { DEFAULT_DATA_URL, normalizeDataUrl } from "./host/catalog.js";
+import { DEFAULT_DATA_URL } from "./host/catalog.js";
 import type { PluginResolvedConfig } from "./host/contracts.js";
 import { resolveActiveProfile } from "./host/profile.js";
+import { configValue, editableSchema, resolvedConfig, type ConfigValue } from "./host/live-config.js";
+import { restartCapability } from "./host/restart.js";
 import { readRuntimeStatus } from "./host/runtime-status.js";
 import { mountRoutes } from "./host/routes.js";
 import { installRecommendationCapabilities } from "./host/recommendations.js";
@@ -17,12 +19,14 @@ export const name = "dsh-top100";
 export const inject = ["skills", "tools"];
 
 export interface Config {
-  dataUrl: string;
+  dataUrl: ConfigValue<string>;
   profile: string;
+  allowRestart?: ConfigValue<boolean>;
 }
 
-export const Config: z<Config> = z.object({
-  dataUrl: z.string().default(DEFAULT_DATA_URL),
+export const Config = z.object({
+  allowRestart: editableSchema(z.boolean().default(true)),
+  dataUrl: editableSchema(z.string().pattern(/^https?:\/\/[^\s]+$/).default(DEFAULT_DATA_URL)),
   // Empty means "manage the profile this DSH process booted".
   profile: z.string().default(""),
 });
@@ -32,7 +36,6 @@ interface DesktopProfilesLike {
 }
 
 export function apply(ctx: Context, config: Config = { dataUrl: DEFAULT_DATA_URL, profile: "" }): void {
-  const dataUrl = normalizeDataUrl(process.env.DSH_TOP100_DATA_URL || config.dataUrl || DEFAULT_DATA_URL);
   let sharedInstalled = false;
   const installShared = (resolved: PluginResolvedConfig): void => {
     if (sharedInstalled) return;
@@ -52,21 +55,14 @@ export function apply(ctx: Context, config: Config = { dataUrl: DEFAULT_DATA_URL
     // have mounted, matching DSH Desktop's published plugin contract.
     const desktopProfiles = ctx.get("desktopProfiles") as DesktopProfilesLike | undefined;
     if (!desktopProfiles) {
-      const resolved: PluginResolvedConfig = {
-        dataUrl,
-        profile: resolveActiveProfile(config.profile),
-      };
+      const resolved = resolvedConfig(config.dataUrl, resolveActiveProfile(config.profile));
       installShared(resolved);
-      host.effect(() => mountRoutes({ webServer: host.webServer, readRuntime: (bundles) => readRuntimeStatus(hostCtx, { isCurrentProfile: resolved.profile === resolveActiveProfile(), bundles }) }, resolved), "dsh-top100: http routes");
+      host.effect(() => mountRoutes({ webServer: host.webServer, restartCapability: () => restartCapability({ currentProfile: resolved.profile === resolveActiveProfile(), allowRestart: config.allowRestart === undefined ? undefined : configValue(config.allowRestart) }), readRuntime: (bundles) => readRuntimeStatus(hostCtx, { isCurrentProfile: resolved.profile === resolveActiveProfile(), bundles }) }, resolved), "dsh-top100: http routes");
       return;
     }
     hostCtx.inject(["desktopPnpm"], (desktopCtx: Context) => {
       const active = desktopProfiles.current;
-      const desktopResolved: PluginResolvedConfig = {
-        dataUrl,
-        profile: active.name,
-        profileDirectory: active.dir,
-      };
+      const desktopResolved = resolvedConfig(config.dataUrl, active.name, active.dir);
       installShared(desktopResolved);
       const runtime = createDesktopPluginRuntime(
         (desktopCtx as unknown as { desktopPnpm: DesktopPnpmLike }).desktopPnpm,
@@ -74,7 +70,7 @@ export function apply(ctx: Context, config: Config = { dataUrl: DEFAULT_DATA_URL
       );
       const desktopHost = desktopCtx as unknown as typeof host;
       desktopHost.effect(() => {
-        const disposeRoutes = mountRoutes({ webServer: desktopHost.webServer, readRuntime: (bundles) => readRuntimeStatus(desktopCtx, { isCurrentProfile: desktopProfiles.current.dir === active.dir, bundles }) }, desktopResolved, runtime);
+        const disposeRoutes = mountRoutes({ webServer: desktopHost.webServer, restartCapability: () => restartCapability({ desktop: true, currentProfile: true }), readRuntime: (bundles) => readRuntimeStatus(desktopCtx, { isCurrentProfile: desktopProfiles.current.dir === active.dir, bundles }) }, desktopResolved, runtime);
         return async () => {
           disposeRoutes();
           await runtime.dispose?.();

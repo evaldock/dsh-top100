@@ -1,3 +1,4 @@
+import { RankTrustMark } from "./RankMark.js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   CatalogItem,
@@ -22,6 +23,7 @@ import { visibleInstallReviewRisks } from "./install-review-presentation.js";
 import { taskPhaseKey } from "./install-presentation.js";
 import { TaskDetails } from "./TaskDetails.js";
 import { useTaskTracker } from "./use-task-tracker.js";
+import { RestartNotice } from "./RestartNotice.js";
 import { TaskStatus } from "./TaskStatus.js";
 import { ManagedPage } from "./ManagedPage.js";
 import { shouldRestartPagination } from "./pagination.js";
@@ -43,21 +45,6 @@ const GITHUB_ICON = (
     <path d="M12 .7a11.3 11.3 0 0 0-3.6 22c.6.1.8-.3.8-.6v-2.2c-3.3.7-4-1.4-4-1.4-.5-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.9 1.2 1.9 1.2 1.1 1.9 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-6a4.7 4.7 0 0 1 1.2-3.1c-.1-.3-.5-1.6.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.5.2 2.8.1 3.1a4.7 4.7 0 0 1 1.2 3.1c0 4.7-2.8 5.7-5.5 6 .4.4.8 1.1.8 2.2v3.2c0 .4.2.7.8.6A11.3 11.3 0 0 0 12 .7Z" />
   </svg>
 );
-function RankTrustMark() {
-  return (
-    <svg viewBox="0 0 48 48" aria-hidden="true">
-      <g className="rank-mark-list">
-        <circle cx="11" cy="14" r="2" />
-        <path d="M17 14h17" />
-        <circle cx="11" cy="23" r="2" />
-        <path d="M17 23h12" />
-        <circle cx="11" cy="32" r="2" />
-        <path d="M17 32h7" />
-      </g>
-      <path className="rank-mark-check" d="m28.5 30.5 3.5 3.5 7-9" />
-    </svg>
-  );
-}
 
 function CategoryGlyph({ id }: { id: PluginCategoryId | null }) {
   return (
@@ -136,6 +123,7 @@ async function readJson<T>(url: string, init?: RequestInit): Promise<T> {
 
 
 export function RankingsPage({ t }: RankingsPageProps) {
+  const [managedQuery, setManagedQuery] = useState("");
   const [section, setSection] = useState<PageSection>("rankings");
   const [view, setView] = useState<RankingView>("hot");
   const [category, setCategory] = useState<PluginCategoryId | null>(null);
@@ -272,6 +260,7 @@ export function RankingsPage({ t }: RankingsPageProps) {
 
   function selectSection(nextSection: PageSection): void {
     resetPreflight();
+    setManagedQuery("");
     setSection(nextSection);
   }
 
@@ -460,6 +449,7 @@ export function RankingsPage({ t }: RankingsPageProps) {
         <button type="button" aria-selected={section === "installed"} onClick={() => selectSection("installed")}>{t("installedPage")}</button>
         <button type="button" aria-selected={section === "diagnostics"} onClick={() => selectSection("diagnostics")}>{t("diagnostics")}</button>
       </nav>
+      <RestartNotice t={t} busy={!tracking.ready || tracking.busy !== null} />
       <TaskStatus tracking={tracking} t={t} onViewResult={() => setInstallActivityOpen(true)} />
 
       {section === "rankings" ? <>
@@ -809,7 +799,7 @@ export function RankingsPage({ t }: RankingsPageProps) {
           </div>
         </div>
       ) : null}
-      </> : section === "installed" ? <ManagedPage t={t} tracking={tracking} retryUpdate={updateRetry} onRetryConsumed={() => setUpdateRetry(null)} onBrowseSkills={() => { resetPreflight(); setCatalogScope("skills"); setView("total"); setInstallAvailability("all"); setCategory(null); setQuery(""); setDraft(""); setSection("rankings"); }} /> : <DiagnosticsPage t={t} />}
+      </> : section === "installed" ? <ManagedPage initialQuery={managedQuery} t={t} tracking={tracking} retryUpdate={updateRetry} onRetryConsumed={() => setUpdateRetry(null)} onBrowseSkills={() => { resetPreflight(); setCatalogScope("skills"); setView("total"); setInstallAvailability("all"); setCategory(null); setQuery(""); setDraft(""); setSection("rankings"); }} /> : <DiagnosticsPage t={t} onManage={(name) => { resetPreflight(); setManagedQuery(name); setSection("installed"); }} />}
 
       {batch && installActivityOpen ? (
         <div className="install-activity-mask">

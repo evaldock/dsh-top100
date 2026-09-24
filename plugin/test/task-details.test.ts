@@ -17,7 +17,7 @@ describe("visible mutation feedback", () => {
   });
   it("omits routine completion logs but keeps additional diagnostic details", () => {
     const job = { ...base, phase: "installed" as const, requiresRestart: true };
-    expect(text(TaskDetails({ job: { ...job, lastLine: "已卸载，重启后确认运行状态" }, t, headingPresent: true }))).toBe("请重启 DSH，使卸载生效。");
+    expect(text(TaskDetails({ job: { ...job, lastLine: "已卸载，重启后确认运行状态" }, t, headingPresent: true }))).toBe("请重启，使卸载生效。");
     expect(text(TaskDetails({ job: { ...job, lastLine: "插件已移除；配置清理失败：保留自定义设置" }, t, headingPresent: true }))).toContain("配置清理失败");
   });
   it("reports real zero downloads and network waiting without invented progress", () => {
@@ -29,7 +29,7 @@ describe("visible mutation feedback", () => {
   it("names the removed plugin and asks for restart to apply removal", () => {
     const result = taskResultText({ ...base, phase: "installed", requiresRestart: true }, t);
     const detail = text(TaskDetails({ job: { ...base, phase: "installed", requiresRestart: true }, t, headingPresent: true }));
-    expect(detail).toBe("请重启 DSH，使卸载生效。");
+    expect(detail).toBe("请重启，使卸载生效。");
     expect(result).toContain("dsh-plugin-shop · 已卸载"); expect(result).toContain("使卸载生效"); expect(result).not.toMatch(/安装|文件已写入|实际运行/);
     expect(taskResultText({ ...base, kind: "skill", phase: "installed" }, t)).not.toContain("重启");
   });

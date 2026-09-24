@@ -50,14 +50,14 @@ export function presentDiagnosticFinding(
   let message: string;
   switch (finding.code) {
     case "runtime-missing-services":
-      message = en ? `Required host services are missing: ${(listParameter(finding, "services") ?? []).join(", ")}. Check the author’s configuration and companion plugins.`
-        : `宿主入口缺少必需服务：${(listParameter(finding, "services") ?? []).join("、")}。请检查作者要求的配置或配套插件。`;
+      message = en ? `Required services are missing: ${(listParameter(finding, "services") ?? []).join(", ")}. Check the author’s configuration and companion plugins.`
+        : `缺少必需服务：${(listParameter(finding, "services") ?? []).join("、")}。请检查作者要求的配置或配套插件。`;
       break;
     case "runtime-failed":
-      message = en ? "The host entry failed to load. Check DSH logs for the cause." : "宿主入口加载失败，请查看 DSH 日志中的具体原因。";
+      message = en ? "The plugin failed to load. Check logs for the cause." : "插件加载失败，请查看日志中的具体原因。";
       break;
     case "runtime-restart-required":
-      message = en ? "Configuration changed. Restart DSH, then refresh to verify." : "配置已改变，重启 DSH 后刷新验证。";
+      message = en ? "Configuration changed. Restart, then refresh to verify." : "配置已改变，重启后刷新验证。";
       break;
     case "profile-missing":
       message = en ? "The Profile directory or package.json could not be read." : "Profile 目录或 package.json 不可读取。";
@@ -82,7 +82,7 @@ export function presentDiagnosticFinding(
       message = en ? "Local link/file plugins must be updated at their source." : "本地 link/file 插件需在来源目录更新。";
       break;
     case "bundle-unlisted":
-      message = en ? "This installed plugin is not in the current catalog." : "已安装的插件不在当前榜单里。";
+      message = en ? "No catalog entry could be matched. This does not prevent the plugin from running." : "尚未匹配到榜单条目，不影响插件运行。";
       break;
     case "bundle-disabled":
       message = en ? "All loading entries for this plugin are disabled in the current configuration." : "当前配置已停用该插件的全部加载行。";
@@ -108,8 +108,8 @@ export function presentDiagnosticFinding(
     case "host-core-dependency": {
       const dependency = parameter(finding, "dependency") ?? only(report.hostDeps.filter((item) => item.plugin === finding.subject))?.dependency;
       message = dependency
-        ? en ? `Host core package ${dependency} is declared in dependencies.` : `把宿主核心包 ${dependency} 写进了 dependencies。`
-        : en ? "A host core package is declared in dependencies. See technical details." : "把宿主核心包写进了 dependencies，请查看技术详情。";
+        ? en ? `Core package ${dependency} is declared in dependencies.` : `把核心包 ${dependency} 写进了 dependencies。`
+        : en ? "A core package is declared in dependencies. See technical details." : "把核心包写进了 dependencies，请查看技术详情。";
       break;
     }
     case "duplicate-entry": {
