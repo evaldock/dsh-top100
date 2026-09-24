@@ -68,7 +68,7 @@ describe("read-only install source assessment", () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("not found", { status: 404 }));
     expect(await assessInstallSource(entry())).toMatchObject({ status: "invalid" });
     for (const repository of [{ url: "https://github.com/other/tool" }, { url: "https://github.com/acme/tool", directory: "packages/other" }]) {
-      fetchMock.mockResolvedValue(new Response(JSON.stringify({ ...manifest(), repository })));
+      fetchMock.mockImplementation(async (url) => new Response(JSON.stringify(String(url).includes("api.github.com") ? { id: String(url).endsWith("acme/tool") ? 1 : 2, full_name: "acme/tool" } : { ...manifest(), repository })));
       expect(await assessInstallSource(entry())).toMatchObject({ status: "invalid" });
     }
   });
@@ -82,6 +82,13 @@ describe("read-only install source assessment", () => {
 });
 
 describe("assessment cache and retry scheduling", () => {
+  it("retries an expired failure even while the UI continues to display it", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(async () => new Response(JSON.stringify(manifest())));
+    const source = entry();
+    const cache: AssessmentCache = { [source.fullName]: assessment(source, { status: "invalid", checkedAt: new Date(now - 8 * day).toISOString() }) };
+    expect((await refreshInstallAssessments([source], cache, { limit: 1, now })).checked).toBe(1);
+    expect(cache[source.fullName].status).toBe("verified");
+  });
   it("reuses current source-bound metadata but retries unavailable evidence after a day", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async () => new Response(JSON.stringify(manifest())));
     const source = entry();

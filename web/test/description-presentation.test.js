@@ -30,7 +30,7 @@ test('website does not fetch or distribute an editorial table', () => {
 test('approved stale descriptions retain the date and update qualification before the body', () => {
   const value = { ...entry, descriptionStatus: { state: 'stale', reviewedAt: '2026-09-16', reason: '来源核查中' } };
   assert.equal(descriptionFor(value), entry.descriptionZh);
-  assert.equal(descriptionDisplayFor(value), `上次核验 2026-09-16，来源核查中，简介待更新。${entry.descriptionZh}`);
+  assert.equal(descriptionDisplayFor(value), `旧版简介（2026-09-16 核对，未确认最新变化）：${entry.descriptionZh}`);
   // Skills normalizes the body on load and formats again when rendering a row.
   assert.equal(descriptionDisplayFor({ ...value, descriptionZh: descriptionFor(value) }), descriptionDisplayFor(value));
   for (const reviewedAt of [undefined, '', '2026-02-29', '2026-13-01', '2026-09-31', '2026-9-16']) {
@@ -56,7 +56,7 @@ test('model stale text uses generatedAt and never presents generation as a human
   const status = { state: 'stale', origin: 'model', generatedAt: '2026-09-16', reason: '来源待核查' };
   const value = { ...entry, descriptionStatus: status };
   assert.equal(descriptionFor(value), entry.descriptionZh);
-  assert.equal(descriptionDisplayFor(value), `生成于 2026-09-16，来源待核查，简介待更新。${entry.descriptionZh}`);
+  assert.equal(descriptionDisplayFor(value), `旧版简介（2026-09-16 生成，未确认最新变化）：${entry.descriptionZh}`);
   assert.doesNotMatch(descriptionDisplayFor(value), /上次核验/);
   for (const generatedAt of [undefined, '', '2026-02-29', '2026-09-31', '2026-9-16']) {
     const invalid = { ...entry, descriptionStatus: { ...status, generatedAt, reviewedAt: '2026-09-16' } };

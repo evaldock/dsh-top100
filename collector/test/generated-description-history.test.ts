@@ -41,7 +41,7 @@ describe('persistent generated description history',()=>{
   expect(coverage.boards.hot).toMatchObject({covered:0,stale:1,available:1});
   const published=publishDescription(document.rankings.hot[0]);
   expect(published.descriptionStatus).toMatchObject({state:'stale',origin:'model',generatedAt:'2026-09-17'});
-  expect(descriptionDisplayFor(toSnapshotSearchEntry(published))).toContain('生成于 2026-09-17');
+  expect(descriptionDisplayFor(toSnapshotSearchEntry(published))).toContain('2026-09-17 生成');
   expect(descriptionDisplayFor(published)).not.toContain('核验');
   updateDailyDescriptionCache([s],cache,plan.jobs);
   expect(cache.get(s.id)?.descriptionHistory).toHaveLength(1);

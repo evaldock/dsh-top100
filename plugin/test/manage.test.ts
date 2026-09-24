@@ -173,7 +173,7 @@ it('managed catalog summaries follow server updates and cannot recover installed
     const stale = { ...entry, descriptionZh: '上次已核实的插件介绍。',
       descriptionStatus: { state: 'stale' as const, reviewedAt: '2026-09-16', reason: '来源核查中' } };
     const staleManaged = (await listManagedPlugins('web', catalog(stale), directory))[0].descriptionZh;
-    expect(staleManaged).toContain('上次核验 2026-09-16');
+    expect(staleManaged).toContain('2026-09-16 核对');
     expect(staleManaged).toContain(stale.descriptionZh);
     const held={...entry,descriptionZh:'已撤回的旧介绍。',descriptionStatus:{state:'review-required' as const,reason:'正在复核'}};
     expect((await listManagedPlugins('web',catalog(held),directory))[0].descriptionZh).toBe('中文简介待复核：正在复核');

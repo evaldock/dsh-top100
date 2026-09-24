@@ -1,7 +1,7 @@
 /** Read-only source preflight. Never installs packages or executes repository code. */
 import { resolveInstallSpec } from "../../plugin/src/install/install-spec.js";
 import { verifyInstallSpec, InstallVerificationError } from "../../plugin/src/install/install-verify.js";
-import { catalogSourceStatus, installSourceKey, type AssessedCatalogEntry } from "../../plugin/src/shared/install-assessment.js";
+import { catalogSourceStatus, installSourceKey, SOURCE_ASSESSMENT_TTL_MS, type AssessedCatalogEntry } from "../../plugin/src/shared/install-assessment.js";
 import type { InstallSourceAssessment, RankingEntry } from "../../plugin/src/shared/types.js";
 import { runPool } from "./pool.js";
 
@@ -25,7 +25,7 @@ export async function assessInstallSource(entry: AssessedCatalogEntry): Promise<
     const invalid = error instanceof InstallVerificationError && (error.status === 404
       || error.reason === "invalid-manifest" || (error.fatal && error.status === null));
     return { ...base, status: invalid ? "invalid" : "unavailable", reason: invalid
-      ? "来源结构或身份预检未通过，请重新预检或查看作者安装说明。"
+      ? `安装信息检查未通过：${error instanceof InstallVerificationError ? error.message.slice(0, 300) : "安装包的声明或仓库归属不符合要求。"}`
       : "本次未能完成来源预检，可能为网络、限流或资料缺失；可稍后重试。" };
   }
 }
@@ -49,7 +49,10 @@ export async function refreshInstallAssessments<T extends AssessedCatalogEntry &
     const status = catalogSourceStatus(entry, "web", now);
     // Retry unavailable results after a day; successful/permanent failures expire in a week.
     const previous = entry.install?.assessment ?? entry.installAssessment;
-    return status === "identified" || status === "stale" || (status === "unavailable" && previous && now - Date.parse(previous.checkedAt) >= 86_400_000);
+    const age = previous ? now - Date.parse(previous.checkedAt) : NaN;
+    return status === "identified" || status === "stale"
+      || (status === "invalid" && (!Number.isFinite(age) || age < 0 || age > SOURCE_ASSESSMENT_TTL_MS))
+      || (status === "unavailable" && previous && age >= 86_400_000);
   }).sort((a, b) => Number(options.priority?.has(b.fullName.toLowerCase())) - Number(options.priority?.has(a.fullName.toLowerCase())) || b.stars - a.stars).slice(0, options.limit);
   await runPool(pending, async entry => {
     const result = await assessInstallSource(entry);

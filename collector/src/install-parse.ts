@@ -65,6 +65,10 @@ function cleanCmdLine(line: string): string {
   let c = line.trim();
   c = c.replace(/^[$\#>]\s*/, "");
   c = stripInstallComment(c);
+  // Author documentation often uses a profile placeholder. Substitute only
+  // these exact tokens, and only if the entire resulting DSH command is safe.
+  const documented = c.replace(/(\s--profile\s+)<(?:name|profile|profile-name)>((?=\s)|$)/g, "$1web");
+  if (documented !== c && parseDshInstallCommandDetails(documented)) c = documented;
   // 过滤 cd/mkdir/echo 等纯前置命令（不含 && 链的）
   if (/^(cd |mkdir |echo |touch |cat >|ls |rm )/.test(c) && !c.includes("&&")) return "";
   return c;

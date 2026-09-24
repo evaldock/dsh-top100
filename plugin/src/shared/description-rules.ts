@@ -71,10 +71,19 @@ export function descriptionDisplayFor(entry: DescriptionEntry): string {
     // Put the qualification first so a collapsed summary cannot look freshly verified.
     if (description === PENDING_DESCRIPTION_ZH) return '中文简介待复核：旧简介正文缺失，等待服务端核查。';
     return status.origin === 'model'
-      ? `生成于 ${status.generatedAt}，来源待核查，简介待更新。${description}`
-      : `上次核验 ${status.reviewedAt}，来源核查中，简介待更新。${description}`;
+      ? `旧版简介（${status.generatedAt} 生成，未确认最新变化）：${description}`
+      : `旧版简介（${status.reviewedAt} 核对，未确认最新变化）：${description}`;
   }
   if (description !== PENDING_DESCRIPTION_ZH || !status) return description;
+  if (status.state === 'review-required') {
+    const explanations: Record<string, string> = {
+      '已复核的功能源码尚未通过当前核验，旧简介和分类暂停使用。': '项目代码已变化，旧简介可能不再准确，待核实后更新。',
+      '所选插件的固定源码证据发生实际行为变化，需完成复核后恢复简介。': '项目代码已变化，旧简介可能不再准确，待核实后更新。',
+      '固定复核简介的来源或包身份已变化，需核对功能后定向更新，不自动替换文案。': '项目资料或插件包发生变化，尚未确认是否仍与原简介对应。',
+      '当前摘要未标明所选子包或路径，需取得子包自身 README 后再生成内容。': '暂缺这个插件自身的功能说明，不能用整个项目的介绍代替。',
+    };
+    if (explanations[status.reason]) return explanations[status.reason];
+  }
   const labels = { 'pending': '中文简介待生成', 'review-required': '中文简介待复核',
     'missing-source': '中文简介资料不足', 'retry': '中文简介生成未完成' };
   const label = labels[status.state];

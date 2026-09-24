@@ -66,7 +66,7 @@ describe("actual ranking navigation and failure actions", () => {
     vi.stubGlobal('fetch', vi.fn((url: string) => Promise.resolve(json(url.includes('status') ? { activeBatches: [] } : staleCatalog))));
     render(); await tick();
     const preview = elements(render()).find(element => element.type === DescriptionPreview);
-    expect(preview?.props.text).toBe('上次核验 2026-09-16，来源核查中，简介待更新。上次已核验的具体插件能力。');
+    expect(preview?.props.text).toBe('旧版简介（2026-09-16 核对，未确认最新变化）：上次已核验的具体插件能力。');
   });
 
   it("switches between four top-level pages with the correct market scope", async () => {
