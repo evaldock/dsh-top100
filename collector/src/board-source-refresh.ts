@@ -1,4 +1,5 @@
 import { refreshCachedInstallEvidence } from "./install-cache.js";
+import { supplementInstallDocument } from "./install-document.js";
 /** Read-only, bounded source refresh for today's two boards, before paid work. */
 import type { DshPlugin } from '@dsh-top100/schema';
 import type { RankingsDocument } from './rankings.js';
@@ -54,8 +55,9 @@ export async function refreshBoardSource(source: DshPlugin, now: number): Promis
     const summary = document === null ? null : summarizeSelectedReadme(source.fullName, source.install, document);
     const facts = document === null ? await readPackageSourceFacts(source, head.sha) : null;
     const checkedAt = new Date(now).toISOString();
-    const install = refreshCachedInstallEvidence({ fullName: source.fullName, ...source.install },
-      { commands: source.install.commands ?? [], source: source.install.commandSource ?? 'template' }, document).installParsed;
+    const installIdentity = { fullName: source.fullName, ...source.install };
+    const install = await supplementInstallDocument(installIdentity, refreshCachedInstallEvidence(installIdentity,
+      { commands: source.install.commands ?? [], source: source.install.commandSource ?? 'template' }, document).installParsed, head.sha);
     // Commands remain an independent assessment. Do not derive a sibling package
     // install command from examples in a package README during evidence refresh.
     let refreshed: DshPlugin = { ...source, readmeSummary: summary ?? facts?.summary ?? null, lastCheckedAt: checkedAt,

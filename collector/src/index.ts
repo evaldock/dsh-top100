@@ -52,6 +52,7 @@ import {
   buildTranslationRequest,
 } from "./llm.js";
 import { INSTALL_PARSER_VERSION, parseInstallCommands } from "./install-parse.js";
+import { supplementInstallDocument } from "./install-document.js";
 import { normalizeTags } from "./tag-normalize.js";
 import { type DescriptionJob } from "./description-jobs.js";
 import { summarizeReadme } from "./summary.js";
@@ -393,6 +394,8 @@ async function main() {
         catch { /* Keep its untrusted commands withheld; metadata collection can continue. */ }
         refreshedInstall = refreshCachedInstallEvidence(installIdentity, refreshedInstall.installParsed, readmeContent);
       }
+      refreshedInstall.installParsed = await supplementInstallDocument(installIdentity,
+        refreshedInstall.installParsed, repo.default_branch ?? "HEAD");
       if (JSON.stringify(installParsed) !== JSON.stringify(refreshedInstall.installParsed)) {
         installParsed = refreshedInstall.installParsed;
         cacheSet<DetectCache>("detect", candidate.fullName, {

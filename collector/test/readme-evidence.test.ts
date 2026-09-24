@@ -48,7 +48,9 @@ describe('selected README provenance',()=>{
   s.fullName=id;s.description='New root marketing';s.readmeSummary=r.sourceReadme;
   s.install.packageName=r.sourceInstall.packageName;s.install.repositoryPath=r.sourceInstall.repositoryPath;
   s.install.discovery!.readme=selectedReadmeEvidence(id,s.install.packageName,s.install.repositoryPath,'revision','original document',r.sourceReadme);
+  expect(reviewedDescription(s)).not.toBe(r.descriptionZh);
+  s.install.discovery!.readme!.documentSha256 = r.sourceDocumentHashes[0];
   expect(reviewedDescription(s)).toBe(r.descriptionZh);
-  delete s.install.discovery!.readme;expect(reviewedDescription(s)).toBeNull();
+  delete s.install.discovery!.readme;expect(reviewedDescription(s)).toBe('中文简介待生成。');
  });
 });

@@ -1049,11 +1049,6 @@
         outline-offset: 3px;
       }
 
-      .plugin-list .plugin .quick-install[hidden],
-      .plugin-list .plugin .install-action[hidden] {
-        display: none;
-      }
-
       .github-logo {
         display: block;
         width: 13px;
@@ -2873,25 +2868,9 @@
         outline: 0;
       }
 
-      .plugin-action.install-action {
-        border-color: var(--accent);
-        color: var(--accent-contrast);
-        background: var(--accent);
-      }
-
-      .plugin-action.install-action:hover,
-      .plugin-action.install-action:focus-visible {
-        color: var(--accent);
-        background: transparent;
-      }
-
       .plugin-list:not(.is-top100-list) .plugin {
         min-height: 282px;
         grid-template-rows: auto auto minmax(0, 1fr) auto auto;
-      }
-
-      .plugin-list:not(.is-top100-list) .quick-install {
-        display: none;
       }
 
       .plugin-actions[hidden],
@@ -3398,7 +3377,7 @@
                 </a>
                 <a class="featured-guide" href="?page=dsh#dsh" data-content-switch="dsh">安装指南 <span aria-hidden="true">→</span></a>
               </div>
-              <p class="plugin-description" data-site-copy="note">把插件榜单带进 DSH，发现、安装和管理插件。</p>
+              <p class="plugin-description" data-site-copy="note">先安装 Top100，再到 DSH 内挑选、安装和管理榜单插件。</p>
               <span class="rank-exempt" aria-label="不参与评分">—</span>
             </aside>
             <p class="status" data-site-copy="note">正在加载 Top 100…</p>
@@ -3463,17 +3442,11 @@
           <a class="github-link" target="_blank" rel="noopener noreferrer">
             <svg class="github-logo" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .7a11.3 11.3 0 0 0-3.6 22c.6.1.8-.3.8-.6v-2.2c-3.3.7-4-1.4-4-1.4-.5-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.9 1.2 1.9 1.2 1.1 1.9 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-6a4.7 4.7 0 0 1 1.2-3.1c-.1-.3-.5-1.6.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.5.2 2.8.1 3.1a4.7 4.7 0 0 1 1.2 3.1c0 4.7-2.8 5.7-5.5 6 .4.4.8 1.1.8 2.2v3.2c0 .4.2.7.8.6A11.3 11.3 0 0 0 12 .7Z"></path></svg>
           </a>
-          <button class="github-link quick-install" type="button" hidden aria-label="复制安装命令">
-            <svg class="copy-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v8M4.8 6.7 8 9.9l3.2-3.2M2 12.5h12"></path></svg>
-          </button>
         </div>
         <p class="plugin-description" data-site-copy="note"></p>
         <div class="plugin-meta" aria-label="项目元数据">
           <span class="meta-updated"></span>
           <span class="meta-growth"></span>
-        </div>
-        <div class="plugin-actions">
-          <button class="plugin-action install-action" type="button" hidden>复制安装命令</button>
         </div>
         <div class="score-cell">
           <span class="stars" aria-label="GitHub Stars"></span>
@@ -3487,12 +3460,11 @@
         normalizeSearchText,
         tokenizeSearchQuery,
       } from "./search-engine.js";
-      import { catalogPresentation, catalogInstallCapability, installCommand } from "./catalog-presentation.js";
+      import { catalogPresentation, catalogInstallCapability } from "./catalog-presentation.js";
       import { filterDiscoveryEntries, requiresSearchIndex } from "./discovery-filter.js";
       import { renderDataFreshness } from "./data-freshness.js";
       import { enhanceDescriptions } from "./description-preview.js";
       import { initializeInstallGuide } from "./install-guide.js";
-      import { chooseCatalogInstallCommand } from "./catalog-install-command.js";
       import { descriptionDisplayFor } from "./description-presentation.js";
       import { showFeaturedPlugin, isFeaturedRepository } from "./featured-plugin.js";
       import { CATEGORY_DEFINITIONS, renderCategoryOptions } from "./category-system.js";
@@ -3871,14 +3843,7 @@
         if (!button) return;
         let command = button.dataset.copyCommand;
         if (!command) return;
-        if (button.dataset.plugin) {
-          command = await chooseCatalogInstallCommand(command);
-          if (!command) return;
-        }
-        const iconOnly = button.classList.contains("quick-install");
         const originalLabel = button.textContent;
-        const originalAriaLabel = button.getAttribute("aria-label");
-        const originalTitle = button.title;
         let copied = false;
         try {
           if (!navigator.clipboard?.writeText) throw new Error("Clipboard API unavailable");
@@ -3895,24 +3860,9 @@
           copied = document.execCommand("copy");
           fallback.remove();
         }
-        if (iconOnly) {
-          button.setAttribute("aria-label", copied ? "安装命令已复制" : "请手动复制安装命令");
-          button.title = copied ? "已复制安装命令" : "请手动复制安装命令";
-          button.classList.toggle("is-copied", copied);
-        } else {
-          button.setAttribute("aria-live", "polite");
-          button.textContent = copied ? "已复制" : "请手动复制";
-        }
-        window.setTimeout(() => {
-          if (iconOnly) {
-            if (originalAriaLabel) button.setAttribute("aria-label", originalAriaLabel);
-            else button.removeAttribute("aria-label");
-            button.title = originalTitle;
-            button.classList.remove("is-copied");
-          } else {
-            button.textContent = originalLabel;
-          }
-        }, copied ? 3000 : 5000);
+        button.setAttribute("aria-live", "polite");
+        button.textContent = copied ? "已复制" : "请手动复制";
+        window.setTimeout(() => { button.textContent = originalLabel; }, copied ? 3000 : 5000);
         if (!copied) return;
         showFeedback("命令已复制。下一步：打开终端或 PowerShell，粘贴并按回车执行。");
         track("install_command_copy", {
@@ -4503,33 +4453,31 @@
           const rank = item.querySelector(".rank");
           const nameText = item.querySelector(".plugin-name-text");
           const githubLink = item.querySelector(".github-link");
-          const quickInstall = item.querySelector(".quick-install");
-          const description = item.querySelector(".plugin-description");
-          const stars = item.querySelector(".stars");
           const trustPill = item.querySelector(".trust-pill");
           const typePill = item.querySelector(".type-pill");
+          const description = item.querySelector(".plugin-description");
+          const stars = item.querySelector(".stars");
           const updated = item.querySelector(".meta-updated");
           const growth = item.querySelector(".meta-growth");
-          const installAction = item.querySelector(".install-action");
           const starText = formatStars(plugin.stars);
           const repositoryUrl = `https://github.com/${plugin.fullName}`;
-          const presentation = catalogPresentation(plugin);
-          const capability = catalogInstallCapability(plugin);
-          const command = installCommand(plugin);
 
           rank.textContent = `#${String(displayRank).padStart(3, "0")}`;
           rank.setAttribute("aria-label", `${rankHead.textContent}第 ${displayRank} 名`);
           nameText.textContent = name;
           nameText.title = name;
+          const presentation = catalogPresentation(plugin);
+          const capability = catalogInstallCapability(plugin);
+          trustPill.textContent = capability.label;
+          trustPill.dataset.level = presentation.trustLevel;
+          trustPill.title = capability.reason;
+          typePill.textContent = presentation.formFactor;
+          typePill.title = presentation.formFactorDescription;
           githubLink.href = repositoryUrl;
           githubLink.dataset.plugin = plugin.fullName;
           githubLink.dataset.rank = String(displayRank);
           githubLink.title = plugin.fullName;
           githubLink.setAttribute("aria-label", `在 GitHub 打开 ${plugin.fullName}`);
-          trustPill.textContent = capability.label;
-          trustPill.dataset.level = presentation.trustLevel;
-          trustPill.title = `${presentation.trustLabel}；${capability.reason}；不代表代码已经过安全审核`;
-          typePill.textContent = presentation.formFactor;
           description.textContent = descriptionZh || "暂无中文简介，请查看项目 README。";
           const updatedAt = plugin.pushedAt || plugin.updatedAt;
           updated.hidden = !updatedAt;
@@ -4555,20 +4503,6 @@
               period.setAttribute("aria-label", period.title);
               growth.appendChild(period);
             }
-          }
-          item.querySelector(".plugin-actions").hidden = !command;
-          if (command) {
-            installAction.hidden = false;
-            installAction.dataset.copyCommand = command;
-            installAction.dataset.plugin = plugin.fullName;
-            installAction.dataset.rank = String(displayRank);
-            installAction.setAttribute("aria-label", `复制 ${name} 的 DSH 安装命令`);
-            quickInstall.hidden = false;
-            quickInstall.dataset.copyCommand = command;
-            quickInstall.dataset.plugin = plugin.fullName;
-            quickInstall.dataset.rank = String(displayRank);
-            quickInstall.title = "复制 DSH 安装命令";
-            quickInstall.setAttribute("aria-label", `复制 ${name} 的 DSH 安装命令`);
           }
           if (!searchActive && currentView === "top100") {
             const heatText = typeof plugin.hotScore === "number" ? new Intl.NumberFormat("zh-CN", { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(plugin.hotScore) : "—";

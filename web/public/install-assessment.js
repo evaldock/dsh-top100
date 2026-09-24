@@ -196,6 +196,7 @@ function catalogSourceStatus(entry, profile = "web", now = Date.now()) {
   if (!resolveCatalogInstallTarget(entry, { profile })) return "unidentified";
   const assessment = entry.install?.assessment ?? entry.installAssessment;
   if (!assessment || assessment.sourceKey !== installSourceKey(entry, profile)) return "identified";
+  if (assessment.status === "invalid") return "invalid";
   const checkedAt = Date.parse(assessment.checkedAt);
   if (!Number.isFinite(checkedAt) || checkedAt > now || now - checkedAt > SOURCE_ASSESSMENT_TTL_MS) return "stale";
   if (assessment.status === "verified" && (!assessment.resolvedTarget || !assessment.integrity)) return "identified";

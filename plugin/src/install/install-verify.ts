@@ -133,12 +133,24 @@ function assertExpectedPackage(manifest: PackageManifest, options: VerifyInstall
   }
 }
 
-function npmRepositoryIdentity(url: string | null, expectedRepository: string | undefined): "matched" | "unavailable" | "not-applicable" {
+async function npmRepositoryIdentity(url: string | null, expectedRepository: string | undefined, signal?: AbortSignal): Promise<"matched" | "unavailable" | "not-applicable"> {
   if (!expectedRepository) return "not-applicable";
   if (!url) return "unavailable";
   const actual = githubRepositoryIdentity(url);
   if (!actual) return "unavailable";
   if (actual !== expectedRepository.toLowerCase()) {
+    // GitHub redirects renamed/transferred repositories. Compare immutable IDs,
+    // never accept similar names or an unverified redirect as identity evidence.
+    const identities = await Promise.all([actual, expectedRepository.toLowerCase()].map(async name => {
+      const value = await fetchJson(`https://api.github.com/repos/${name}`, signal) as { id?: unknown; full_name?: unknown } | null;
+      return value && typeof value.id === "number" && Number.isSafeInteger(value.id) && value.id > 0
+        && typeof value.full_name === "string" ? { id: value.id, name: value.full_name.toLowerCase() } : null;
+    }));
+    if (identities.some(value => value === null)) {
+      throw new InstallVerificationError("安装包声明的仓库名称与目录不同，暂时无法确认是否为同一仓库，已停止安装");
+    }
+    if (identities[0]!.id === identities[1]!.id
+      && identities[0]!.name === identities[1]!.name) return "matched";
     throw new InstallVerificationError(
       `npm 包声明的仓库 ${actual} 与目录条目 ${expectedRepository.toLowerCase()} 不一致，已停止安装`,
       true,
@@ -314,7 +326,7 @@ async function verifyNpm(spec: string, options: VerifyInstallOptions): Promise<V
     version,
     integrity,
     repositoryUrl: declaredRepository,
-    repositoryIdentity: npmRepositoryIdentity(declaredRepository, options.expectedRepository),
+    repositoryIdentity: await npmRepositoryIdentity(declaredRepository, options.expectedRepository, options.signal),
   });
 }
 

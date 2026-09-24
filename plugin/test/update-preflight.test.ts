@@ -25,7 +25,7 @@ function registry(extra: Record<string, unknown> = {}) {
     name: "demo", version: "1.2.3", repository: "https://github.com/acme/demo.git",
     dist: { integrity: "sha512-example" }, dsh: { bundle: { patch: "./patch.yml" } }, ...extra,
   };
-  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ ...manifest, versions: { [String(manifest.version)]: manifest } }), { status: 200 })));
+  vi.stubGlobal("fetch", vi.fn(async (url: string) => new Response(JSON.stringify(url.includes("api.github.com") ? { id: url.endsWith("acme/demo") ? 1 : 2, full_name: "acme/demo" } : { ...manifest, versions: { [String(manifest.version)]: manifest } }), { status: 200 })));
 }
 function request(approval: ApprovedUpdate, risksAccepted = true) {
   return { name: approval.name, approvalToken: approval.preflight.approvalToken, risksAccepted };

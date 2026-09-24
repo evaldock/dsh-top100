@@ -45,6 +45,14 @@ export function refreshCachedInstallEvidence(
   if (selectedReadme !== null) {
     return { installParsed: parseInstallCommands(selectedReadme), needsReadmeRefresh: false };
   }
+  // Repair the audited placeholder omission without expiring the whole catalog
+  // or touching functional descriptions and paid work queues.
+  if (identity.fullName.toLowerCase() === "reactive-resume/reactive-resume"
+    && identity.packageName === "dsh-plugin-reactive-resume"
+    && identity.repositoryPath === "packages/dsh-plugin"
+    && !previous.commands.some(command => /\bdsh\b.*\bplugin\b.*\badd\b/.test(command))) {
+    return { installParsed: previous, needsReadmeRefresh: true };
+  }
   if (hasKnownInvalidInstallEvidence(identity) && !containsOnlyLocalTarballCommands(previous)) {
     return { installParsed: { commands: [], source: "template" }, needsReadmeRefresh: true };
   }

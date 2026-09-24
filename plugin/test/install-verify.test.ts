@@ -229,7 +229,7 @@ describe("install source verification", () => {
   });
 
   it("rejects an npm package whose declared GitHub repository conflicts with the catalog", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => new Response(JSON.stringify(url.includes("api.github.com") ? { id: url.endsWith("acme/demo") ? 1 : 2, full_name: "acme/demo" } : {
       name: "demo",
       version: "1.0.0",
       dist: { integrity: "sha512-demo" },

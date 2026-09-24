@@ -18,11 +18,14 @@ test("describes installation evidence without promising install success", () => 
   assert.match(html, /不代表已安装验证/);
 });
 
-test("keeps install actions hidden when no matching source is available", () => {
-  assert.match(html, /\.plugin-list \.plugin \.quick-install\[hidden\],[\s\S]*?\.plugin-list \.plugin \.install-action\[hidden\] \{\s*display: none;/);
-  assert.match(html, /if \(command\) \{\s*installAction\.hidden = false/);
-  assert.match(html, /class="github-link quick-install"[^>]* hidden/);
-  assert.match(html, /class="plugin-action install-action"[^>]* hidden/);
+test("catalog rows keep source links and guide installation through Top100 in DSH", () => {
+  const row = html.match(/<template id="plugin-template">[\s\S]*?<\/template>/)?.[0];
+  assert.ok(row);
+  assert.match(row, /class="github-link"/);
+  assert.match(row, /class="trust-pill"/);
+  assert.doesNotMatch(row, /category-pill|repository-name|usage-note|quick-install|install-action|data-copy-command/);
+  assert.doesNotMatch(html, /chooseCatalogInstallCommand|quickInstall\.dataset/);
+  assert.match(html, /安装 Top100 到 DSH/);
 });
 
 test("places editorial 000 inside the table using shared row styles, without a score", () => {
@@ -37,7 +40,7 @@ test("places editorial 000 inside the table using shared row styles, without a s
   assert.match(aside, /class="rank"/);
   assert.match(aside, /class="plugin-name"/);
   assert.match(aside, /class="plugin-description"/);
-  assert.match(aside, /把插件榜单带进 DSH，发现、安装和管理插件。/);
+  assert.match(aside, /先安装 Top100，再到 DSH 内挑选、安装和管理榜单插件。/);
   assert.ok(html.indexOf(aside) > html.indexOf('id="plugin-list"'));
   assert.match(html, /fragment\.prepend\(featuredPlugin\)/);
   assert.match(html, /\.plugin-list\.is-top100-list \.featured-plugin\[hidden\] \{ display: none; \}/);

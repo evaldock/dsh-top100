@@ -1065,8 +1065,8 @@
             "status": "verified",
             "kind": "bundle",
             "policyVersion": 6,
-            "checkedAt": "2026-09-17T00:02:17.309Z",
-            "sourceRevision": "8a0d1d8b0a66de89342b8a7ea0de15d2644600e8",
+            "checkedAt": "2026-09-23T23:26:42.145Z",
+            "sourceRevision": "d5f98e76be12f1b5d73cf2c9a5cec3ae777779ca",
             "evidence": [
               "reviewed ./ validated bundle declaration, package name and entry"
             ],
@@ -1074,8 +1074,8 @@
               "fullName": "elysia395/dsh-wallpaper-engine",
               "packageName": "dsh-plugin-wallpaper-engine",
               "path": "README.md",
-              "sourceRevision": "8a0d1d8b0a66de89342b8a7ea0de15d2644600e8",
-              "documentSha256": "b7559c9196196918e6d0061cd6eea188ad41f01f437aeda68c2892dd192e78f8",
+              "sourceRevision": "d5f98e76be12f1b5d73cf2c9a5cec3ae777779ca",
+              "documentSha256": "3bfe6bd04e46e73e14edf5fc1d6741ec7ff0fd65218a4fff457f533f1a3cf212",
               "summarySha256": "d2de4c39a13924d18bf060c1b930e688abf2154d41bd8cd99ae5f99ea6a7c549"
             }
           },
@@ -1103,7 +1103,7 @@
         "hot": 92,
         "rising": 81
       },
-      "expected": "将本机 Wallpaper Engine 壁纸用作 DSH 网页背景，播放视频、加载网页，并将场景壁纸主纹理显示为静态图，支持调整播放与外观。"
+      "expected": "将本机 Wallpaper Engine 壁纸用作 DSH 网页背景，支持视频、网页及场景渲染，失败时回退静态画面，并可调整播放与外观。"
     },
     {
       "source": {

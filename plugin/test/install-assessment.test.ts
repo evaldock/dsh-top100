@@ -18,6 +18,11 @@ function assessment(source: AssessedCatalogEntry, overrides: Partial<InstallSour
 }
 
 describe("catalog source assessment", () => {
+  it("keeps an expired failure visible instead of replacing it with a generic expiry", () => {
+    const source = entry();
+    source.install!.assessment = assessment(source, { status: "invalid", checkedAt: new Date(now - SOURCE_ASSESSMENT_TTL_MS - 1).toISOString() });
+    expect(catalogSourceStatus(source, "web", now)).toBe("invalid");
+  });
   it("distinguishes no recognized source, author source, and metadata evidence", () => {
     const source = entry();
     expect(catalogSourceStatus({ fullName: source.fullName }, "web", now)).toBe("unidentified");

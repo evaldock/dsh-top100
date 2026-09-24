@@ -178,8 +178,8 @@ describe('reviewed board corrections survive the real daily pipeline', () => {
       if (change === 'readme' && publishedDescriptionZh(rankingEntry(input)) !== PENDING_DESCRIPTION_ZH) {
         const published = publishDescription(rankingEntry(input));
         expect(published.descriptionStatus?.state, input.fullName).toBe('stale');
-        expect(descriptionDisplayFor(published), input.fullName).toContain('上次核验');
-        expect(webDescriptionDisplayFor(published), input.fullName).toContain('简介待更新');
+        expect(descriptionDisplayFor(published), input.fullName).toContain('核对，未确认最新变化');
+        expect(webDescriptionDisplayFor(published), input.fullName).toContain('未确认最新变化');
       } else expect(publishedDescriptionZh(rankingEntry(input))).toBe(PENDING_DESCRIPTION_ZH);
     }
   });
@@ -230,8 +230,8 @@ describe('reviewed board corrections survive the real daily pipeline', () => {
       if (input.type === 'cordis-plugin') {
         const published = publishDescription(rankingEntry(input));
         expect(published.descriptionStatus?.state, input.fullName).toBe('stale');
-        expect(descriptionDisplayFor(published), input.fullName).toContain('上次核验');
-        expect(webDescriptionDisplayFor(published), input.fullName).toContain('简介待更新');
+        expect(descriptionDisplayFor(published), input.fullName).toContain('核对，未确认最新变化');
+        expect(webDescriptionDisplayFor(published), input.fullName).toContain('未确认最新变化');
       } else expect(publishedDescriptionZh(rankingEntry(input))).toBe(PENDING_DESCRIPTION_ZH);
     }
   });
@@ -256,8 +256,8 @@ describe('reviewed board corrections survive the real daily pipeline', () => {
       if (input.type === 'cordis-plugin') {
         const published = publishDescription(rankingEntry(input));
         expect(published.descriptionStatus?.state, input.fullName).toBe('stale');
-        expect(descriptionDisplayFor(published), input.fullName).toContain('上次核验');
-        expect(webDescriptionDisplayFor(published), input.fullName).toContain('简介待更新');
+        expect(descriptionDisplayFor(published), input.fullName).toContain('核对，未确认最新变化');
+        expect(webDescriptionDisplayFor(published), input.fullName).toContain('未确认最新变化');
       } else expect(publishedDescriptionZh(rankingEntry(input))).toBe(PENDING_DESCRIPTION_ZH);
     }
   });
@@ -303,7 +303,10 @@ describe('reviewed board corrections survive the real daily pipeline', () => {
       const webDisplay = webDescriptionDisplayFor(published);
       expect(webDisplay, entry.fullName).toBe(pluginDisplay);
       if (expected) expect(pluginDisplay, entry.fullName).toBe(expected);
-      else expect(pluginDisplay, entry.fullName).toMatch(/^中文简介待复核：/);
+      else {
+        expect(published.descriptionStatus?.state).toBe('review-required');
+        expect(pluginDisplay, entry.fullName).toMatch(/中文简介待复核|待核实后更新|尚未确认|暂缺/);
+      }
     }
   });
 });

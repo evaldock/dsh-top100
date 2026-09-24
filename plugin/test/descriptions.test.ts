@@ -22,7 +22,7 @@ describe('server-owned published descriptions', () => {
   it('preserves approved stale text and dated qualification through full, compact and filtered catalogs', () => {
     const row = { ...current, descriptionStatus: { state: 'stale' as const, reviewedAt: '2026-09-16', reason: '来源核查中' } };
     expect(descriptionFor(row)).toBe(current.descriptionZh);
-    expect(descriptionDisplayFor(row)).toBe(`上次核验 2026-09-16，来源核查中，简介待更新。${current.descriptionZh}`);
+    expect(descriptionDisplayFor(row)).toBe(`旧版简介（2026-09-16 核对，未确认最新变化）：${current.descriptionZh}`);
     const payload = { schemaVersion: 2, generatedAt: '2026-09-17T00:00:00Z', snapshotDate: '2026-09-17' };
     for (const doc of [parseRankingSearchDocument(JSON.stringify({ ...payload, rankings: [row] })),
       parseRankingsDocument(JSON.stringify({ ...payload, rankings: { hot: [row], rising: [row], total: [row] } }))]) {
@@ -30,13 +30,13 @@ describe('server-owned published descriptions', () => {
       expect(parsed.descriptionStatus).toEqual(row.descriptionStatus);
       expect(descriptionDisplayFor(parsed)).toBe(descriptionDisplayFor(row));
       const searched = filterCatalog(doc, { ...options, query: '读取网页' }).items[0];
-      expect(descriptionDisplayFor(searched)).toContain('上次核验 2026-09-16');
+      expect(descriptionDisplayFor(searched)).toContain('2026-09-16 核对');
     }
   });
   it('keeps model generation dates distinct from reviewed dates in full and compact catalogs', () => {
     const row = { ...current, descriptionStatus: { state: 'stale' as const, origin: 'model' as const,
       generatedAt: '2026-09-16', reason: '来源变化待核查' } };
-    const expected = `生成于 2026-09-16，来源待核查，简介待更新。${current.descriptionZh}`;
+    const expected = `旧版简介（2026-09-16 生成，未确认最新变化）：${current.descriptionZh}`;
     expect(descriptionFor(row)).toBe(current.descriptionZh);
     expect(descriptionDisplayFor(row)).toBe(expected);
     const payload = { schemaVersion: 2, generatedAt: '2026-09-17T00:00:00Z', snapshotDate: '2026-09-17' };
