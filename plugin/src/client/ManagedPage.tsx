@@ -1,3 +1,4 @@
+import { PluginUpgradeGuide } from "./PluginVersion.js";
 import { RankTrustMark } from "./RankMark.js";
 import { taskPhaseKey, taskProgressKey } from "./install-presentation.js";
 import { TaskDetails } from "./TaskDetails.js";
@@ -296,6 +297,7 @@ export function ManagedPage({ t, tracking, retryUpdate, onRetryConsumed, initial
                   {item.runtime?.missingServices?.length ? <div><strong>{t("runtimeDetails")}</strong><p><code>{item.runtime.missingServices.join(", ")}</code></p></div> : null}
                   {item.kind === "bundle" && (item.protected || item.local) ? <p className="lede">{t(item.protected ? "protectedManageHint" : "localManageHint")}</p> : null}
                   {item.kind === "skill" ? <p className="lede">{t("skillReinstallHint")}</p> : null}
+                  {item.kind === "bundle" && ["@dsheval/dsh-top100-plugin", "@evaldock/dsh-top100-plugin"].includes(item.name) ? <PluginUpgradeGuide t={t} /> : null}
                   <div className="managed-links">
                     {item.url ? <a href={item.url} target="_blank" rel="noreferrer">{t("viewProject")} ↗</a> : null}
                     {item.protected ? <a href="https://www.evaldock.ai/top100/?page=dsh#dsh" target="_blank" rel="noreferrer">{t("maintenanceGuide")} ↗</a> : null}

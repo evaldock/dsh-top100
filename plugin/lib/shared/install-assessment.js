@@ -14,6 +14,9 @@ export function catalogSourceStatus(entry, profile = "web", now = Date.now()) {
     const assessment = entry.install?.assessment ?? entry.installAssessment;
     if (!assessment || assessment.sourceKey !== installSourceKey(entry, profile))
         return "identified";
+    // Age does not erase a known failure. The collector retries it separately.
+    if (assessment.status === "invalid")
+        return "invalid";
     const checkedAt = Date.parse(assessment.checkedAt);
     if (!Number.isFinite(checkedAt) || checkedAt > now || now - checkedAt > SOURCE_ASSESSMENT_TTL_MS)
         return "stale";

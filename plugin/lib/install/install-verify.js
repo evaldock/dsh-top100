@@ -26,7 +26,21 @@ function isBundleManifest(value) {
     if (value === null || typeof value !== "object")
         return false;
     const manifest = value;
-    return typeof manifest.dsh?.bundle?.patch === "string" && manifest.dsh.bundle.patch.trim().length > 0;
+    const patch = manifest.dsh?.bundle?.patch;
+    const files = typeof patch === "string" ? [patch] : patch;
+    return Array.isArray(files) && files.length > 0
+        && files.every((file) => typeof file === "string" && file.trim().length > 0);
+}
+/** Retain only DSH peers, while preserving malformed declarations as unknown. */
+function dshPeerDeclarations(peers) {
+    if (peers === undefined)
+        return {};
+    if (!peers || typeof peers !== "object" || Array.isArray(peers))
+        return null;
+    const entries = Object.entries(peers);
+    if (entries.some(([, range]) => typeof range !== "string"))
+        return null;
+    return Object.fromEntries(entries.filter(([name]) => name === "@deepseek-ai/dsh" || name.startsWith("@deepseek-ai/dsh-")));
 }
 function lifecycleScriptEvidence(manifest) {
     const names = ["preinstall", "install", "postinstall", "prepare"];
@@ -70,7 +84,7 @@ function assertExpectedPackage(manifest, options) {
         throw new InstallVerificationError(`安装包声明的仓库子目录 ${declaredPath} 与目录选中的插件子目录 ${expectedPath} 不一致，已停止安装`, true);
     }
 }
-function npmRepositoryIdentity(url, expectedRepository) {
+async function npmRepositoryIdentity(url, expectedRepository, signal) {
     if (!expectedRepository)
         return "not-applicable";
     if (!url)
@@ -79,6 +93,19 @@ function npmRepositoryIdentity(url, expectedRepository) {
     if (!actual)
         return "unavailable";
     if (actual !== expectedRepository.toLowerCase()) {
+        // GitHub redirects renamed/transferred repositories. Compare immutable IDs,
+        // never accept similar names or an unverified redirect as identity evidence.
+        const identities = await Promise.all([actual, expectedRepository.toLowerCase()].map(async (name) => {
+            const value = await fetchJson(`https://api.github.com/repos/${name}`, signal);
+            return value && typeof value.id === "number" && Number.isSafeInteger(value.id) && value.id > 0
+                && typeof value.full_name === "string" ? { id: value.id, name: value.full_name.toLowerCase() } : null;
+        }));
+        if (identities.some(value => value === null)) {
+            throw new InstallVerificationError("安装包声明的仓库名称与目录不同，暂时无法确认是否为同一仓库，已停止安装");
+        }
+        if (identities[0].id === identities[1].id
+            && identities[0].name === identities[1].name)
+            return "matched";
         throw new InstallVerificationError(`npm 包声明的仓库 ${actual} 与目录条目 ${expectedRepository.toLowerCase()} 不一致，已停止安装`, true);
     }
     return "matched";
@@ -127,6 +154,7 @@ function verifiedTarget(requestedTarget, target, manifest, source, resolved = {}
         repositoryUrl: resolved.repositoryUrl ?? null,
         repositoryIdentity: resolved.repositoryIdentity ?? "not-applicable",
         lifecycleScripts,
+        dshPeers: dshPeerDeclarations(manifest.peerDependencies),
         verifiedAt: Date.now(),
         needsBuildApproval,
         buildApprovalKeys,
@@ -226,7 +254,7 @@ async function verifyNpm(spec, options) {
         version,
         integrity,
         repositoryUrl: declaredRepository,
-        repositoryIdentity: npmRepositoryIdentity(declaredRepository, options.expectedRepository),
+        repositoryIdentity: await npmRepositoryIdentity(declaredRepository, options.expectedRepository, options.signal),
     });
 }
 async function githubCommit(owner, repo, ref, signal) {

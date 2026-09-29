@@ -1,3 +1,5 @@
+import { PluginVersion } from "./PluginVersion.js";
+import { HostCompatibility } from "./HostCompatibility.js";
 import { RankTrustMark } from "./RankMark.js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
@@ -434,6 +436,7 @@ export function RankingsPage({ t }: RankingsPageProps) {
         <div className="head-copy">
           <div className="market-title-row">
             <h2>{t("title")}</h2>
+            <PluginVersion />
             <a className="github-link" href="https://github.com/evaldock/dsh-top100" aria-label="dsh-top100 GitHub" title="dsh-top100 GitHub" target="_blank" rel="noopener noreferrer">{GITHUB_ICON}</a>
           </div>
           {data ? <div className="meta">
@@ -739,6 +742,7 @@ export function RankingsPage({ t }: RankingsPageProps) {
                     <strong>{identity.name}</strong>
                     <code className="confirm-target" aria-label={t("resolvedSource")}>{preflight?.provenance.resolvedTarget ?? item.installSpec?.spec ?? "-"}</code>
                   </div> : null}
+                  <HostCompatibility evidence={preflight?.hostCompatibility} t={t} />
                   <section className="confirm-effects" aria-label={t("installSummary")}>
                     {scriptCount > 0 ? <div className="confirm-scripts" data-warning={scriptCount > 0}>
                       <p>{t("confirmScripts")}</p>

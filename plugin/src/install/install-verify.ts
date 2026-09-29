@@ -35,6 +35,8 @@ export interface VerifiedInstallTarget {
   repositoryUrl: string | null;
   repositoryIdentity: "matched" | "unavailable" | "not-applicable";
   lifecycleScripts: LifecycleScriptEvidence[];
+  /** DSH peer declarations from the exact verified manifest; null means malformed. */
+  dshPeers?: Record<string, string> | null;
   verifiedAt: number;
   needsBuildApproval: boolean;
   /** Exact pnpm allowBuilds keys verified for this source. */
@@ -77,7 +79,19 @@ export function clearInstallVerificationCache(): void {
 function isBundleManifest(value: unknown): value is PackageManifest {
   if (value === null || typeof value !== "object") return false;
   const manifest = value as PackageManifest;
-  return typeof manifest.dsh?.bundle?.patch === "string" && manifest.dsh.bundle.patch.trim().length > 0;
+  const patch = manifest.dsh?.bundle?.patch;
+  const files = typeof patch === "string" ? [patch] : patch;
+  return Array.isArray(files) && files.length > 0
+    && files.every((file) => typeof file === "string" && file.trim().length > 0);
+}
+
+/** Retain only DSH peers, while preserving malformed declarations as unknown. */
+function dshPeerDeclarations(peers: unknown): Record<string, string> | null {
+  if (peers === undefined) return {};
+  if (!peers || typeof peers !== "object" || Array.isArray(peers)) return null;
+  const entries = Object.entries(peers);
+  if (entries.some(([, range]) => typeof range !== "string")) return null;
+  return Object.fromEntries(entries.filter(([name]) => name === "@deepseek-ai/dsh" || name.startsWith("@deepseek-ai/dsh-"))) as Record<string, string>;
 }
 
 function lifecycleScriptEvidence(manifest: PackageManifest): LifecycleScriptEvidence[] {
@@ -219,6 +233,7 @@ function verifiedTarget(
     repositoryUrl: resolved.repositoryUrl ?? null,
     repositoryIdentity: resolved.repositoryIdentity ?? "not-applicable",
     lifecycleScripts,
+    dshPeers: dshPeerDeclarations(manifest.peerDependencies),
     verifiedAt: Date.now(),
     needsBuildApproval,
     buildApprovalKeys,

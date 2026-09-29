@@ -1,5 +1,6 @@
 /** Resolve immutable install evidence before the user is asked to approve a profile change. */
 
+import { evaluateHostCompatibility } from "./host-compatibility.js";
 import { randomUUID } from "node:crypto";
 import { resolveInstallSpec } from "../install/install-spec.js";
 import { verifyInstallSpec, type VerifiedInstallTarget } from "../install/install-verify.js";
@@ -83,6 +84,7 @@ export function bundleInstallPreflight(
     profile: options.profile,
     kind: "bundle",
     provenance: bundleProvenance(bundleTarget),
+    hostCompatibility: evaluateHostCompatibility(bundleTarget.dshPeers),
     lifecycleScripts: bundleTarget.lifecycleScripts,
     risks,
     requiresExplicitApproval: risks.some((risk) => risk.severity === "warning"),

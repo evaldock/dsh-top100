@@ -46,6 +46,11 @@ afterEach(() => {
 });
 
 describe("install preflight approval", () => {
+  it("includes current-host declaration evidence without treating undeclared versions as compatible", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ name: "demo", version: "1.0.0", repository: "https://github.com/acme/demo", dist: { integrity: "sha512-test" }, dsh: { bundle: { patch: ["a.yml", "b.yml"] } } }))));
+    const approval = await createInstallPreflight(entry(), "web");
+    expect(approval.preflight.hostCompatibility).toMatchObject({ status: "unknown", reason: "not-declared" });
+  });
   it("uses the actual destination Profile and rejects mismatches before source lookup", async () => {
     const fetchMock = vi.fn(async () => new Response(JSON.stringify({
       name: "demo", version: "1.4.2", repository: "https://github.com/acme/demo.git",

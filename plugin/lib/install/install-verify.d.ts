@@ -18,6 +18,8 @@ export interface VerifiedInstallTarget {
     repositoryUrl: string | null;
     repositoryIdentity: "matched" | "unavailable" | "not-applicable";
     lifecycleScripts: LifecycleScriptEvidence[];
+    /** DSH peer declarations from the exact verified manifest; null means malformed. */
+    dshPeers?: Record<string, string> | null;
     verifiedAt: number;
     needsBuildApproval: boolean;
     /** Exact pnpm allowBuilds keys verified for this source. */

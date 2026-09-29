@@ -31,6 +31,106 @@ var PluginErrorBoundary = class extends react.Component {
 };
 
 //#endregion
+//#region src/client/PluginVersion.tsx
+const TOP100_PUBLISHED_VERSIONS = "https://www.npmjs.com/package/@evaldock/dsh-top100-plugin?activeTab=versions";
+const TOP100_UPGRADE_GUIDE = "https://github.com/evaldock/dsh-top100/blob/main/plugin/README.md#快速开始";
+function pluginVersionFromStatus(value) {
+	if (!value || typeof value !== "object") return null;
+	const status = value;
+	return status.ok === true && status.name === "dsh-top100" && typeof status.version === "string" && status.version.length <= 128 && /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/.test(status.version) ? status.version : null;
+}
+/** A supplied status version avoids a request; otherwise read once, without a timer loop. */
+function PluginVersion({ version }) {
+	const [loadedVersion, setLoadedVersion] = (0, react.useState)(null);
+	(0, react.useEffect)(() => {
+		if (version !== void 0) return;
+		const controller = new AbortController();
+		const timeout = setTimeout(() => controller.abort(), 8e3);
+		fetch("/dsh-top100/status", {
+			signal: controller.signal,
+			cache: "no-store"
+		}).then((response) => response.ok ? response.json() : null).then((status) => {
+			if (!controller.signal.aborted) setLoadedVersion(pluginVersionFromStatus(status));
+		}).catch(() => {}).finally(() => clearTimeout(timeout));
+		return () => {
+			clearTimeout(timeout);
+			controller.abort();
+		};
+	}, [version]);
+	const currentVersion = version === void 0 ? loadedVersion : pluginVersionFromStatus({
+		ok: true,
+		name: "dsh-top100",
+		version
+	});
+	return currentVersion ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+		className: "plugin-version",
+		children: ["v", currentVersion]
+	}) : null;
+}
+function PluginUpgradeGuide({ t }) {
+	return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
+		className: "plugin-upgrade-guide",
+		"aria-label": t("selfUpgradeTitle"),
+		children: [
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("strong", { children: t("selfUpgradeTitle") }),
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", { children: t("selfUpgradeHint") }),
+			/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("p", { children: [
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("a", {
+					href: TOP100_PUBLISHED_VERSIONS,
+					target: "_blank",
+					rel: "noopener noreferrer",
+					children: t("selfUpgradeVersions")
+				}),
+				" · ",
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("a", {
+					href: TOP100_UPGRADE_GUIDE,
+					target: "_blank",
+					rel: "noopener noreferrer",
+					children: t("selfUpgradeGuide")
+				})
+			] }),
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", { children: t("selfUpgradeLocalHint") })
+		]
+	});
+}
+
+//#endregion
+//#region src/client/HostCompatibility.tsx
+function HostCompatibility({ evidence, t }) {
+	if (!evidence) return null;
+	return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
+		className: "confirm-effects",
+		"aria-label": t("hostCompatibility"),
+		children: [
+			/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("strong", { children: [
+				t("hostCompatibility"),
+				": ",
+				t(`host_${evidence.status}`)
+			] }),
+			/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("p", { children: [
+				t("hostCurrent"),
+				": ",
+				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("code", { children: evidence.runtimeVersion ?? "—" })
+			] }),
+			evidence.requirements.map((item) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("p", { children: [
+				/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("code", { children: [
+					item.name,
+					": ",
+					item.range
+				] }),
+				" — ",
+				t(`host_${item.matched === null ? "unknown" : item.matched ? "matched" : "mismatch"}`)
+			] }, item.name)),
+			/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", { children: t(`host_${evidence.reason}`) }),
+			evidence.status === "mismatch" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+				className: "cache-warning",
+				children: t("hostMismatchHint")
+			}) : null
+		]
+	});
+}
+
+//#endregion
 //#region src/client/RankMark.tsx
 function RankTrustMark() {
 	return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
@@ -157,9 +257,18 @@ function descriptionDisplayFor(entry) {
 	const status = descriptionStatusFor(entry.descriptionStatus);
 	if (status?.state === "stale") {
 		if (description === PENDING_DESCRIPTION_ZH) return "中文简介待复核：旧简介正文缺失，等待服务端核查。";
-		return status.origin === "model" ? `生成于 ${status.generatedAt}，来源待核查，简介待更新。${description}` : `上次核验 ${status.reviewedAt}，来源核查中，简介待更新。${description}`;
+		return status.origin === "model" ? `旧版简介（${status.generatedAt} 生成，未确认最新变化）：${description}` : `旧版简介（${status.reviewedAt} 核对，未确认最新变化）：${description}`;
 	}
 	if (description !== PENDING_DESCRIPTION_ZH || !status) return description;
+	if (status.state === "review-required") {
+		const explanations = {
+			"已复核的功能源码尚未通过当前核验，旧简介和分类暂停使用。": "项目代码已变化，旧简介可能不再准确，待核实后更新。",
+			"所选插件的固定源码证据发生实际行为变化，需完成复核后恢复简介。": "项目代码已变化，旧简介可能不再准确，待核实后更新。",
+			"固定复核简介的来源或包身份已变化，需核对功能后定向更新，不自动替换文案。": "项目资料或插件包发生变化，尚未确认是否仍与原简介对应。",
+			"当前摘要未标明所选子包或路径，需取得子包自身 README 后再生成内容。": "暂缺这个插件自身的功能说明，不能用整个项目的介绍代替。"
+		};
+		if (explanations[status.reason]) return explanations[status.reason];
+	}
 	return `${{
 		"pending": "中文简介待生成",
 		"review-required": "中文简介待复核",
@@ -1028,6 +1137,7 @@ function catalogSourceStatus(entry, profile = "web", now = Date.now()) {
 	if (!resolveCatalogInstallTarget(entry, { profile })) return "unidentified";
 	const assessment = entry.install?.assessment ?? entry.installAssessment;
 	if (!assessment || assessment.sourceKey !== installSourceKey(entry, profile)) return "identified";
+	if (assessment.status === "invalid") return "invalid";
 	const checkedAt = Date.parse(assessment.checkedAt);
 	if (!Number.isFinite(checkedAt) || checkedAt > now || now - checkedAt > SOURCE_ASSESSMENT_TTL_MS) return "stale";
 	if (assessment.status === "verified" && (!assessment.resolvedTarget || !assessment.integrity)) return "identified";
@@ -1049,6 +1159,11 @@ function presentInstallCapability(item) {
 		kind: "installed",
 		labelKey: "capabilityInstalled",
 		reasonKey: "capabilityInstalledReason"
+	};
+	if (discoveryNeedsReview(item) && item.install?.discovery?.functionReview?.decision === "held") return {
+		kind: "browse",
+		labelKey: "capabilityFunctionReview",
+		reasonKey: "capabilityFunctionReviewReason"
 	};
 	if (discoveryNeedsReview(item)) return {
 		kind: "browse",
@@ -2066,6 +2181,51 @@ function TaskStatus({ tracking, t, onViewResult }) {
 }
 
 //#endregion
+//#region src/client/UpdateLinks.tsx
+function githubRepository(value) {
+	if (!value) return null;
+	const match = /^(?:git\+)?https:\/\/github\.com\/([A-Za-z0-9_-]+)\/([A-Za-z0-9_.-]+?)(?:\.git)?\/?$/.exec(value);
+	if (!match || match[2] === "." || match[2] === "..") return null;
+	return `https://github.com/${match[1]}/${match[2]}`;
+}
+/** Link only to known identities; version numbers do not imply a GitHub release tag. */
+function updateLinks(provenance) {
+	const links = [];
+	if (provenance.source === "npm" && provenance.packageName && provenance.version && provenance.packageName.length <= 214 && /^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/.test(provenance.packageName) && provenance.version.length <= 128 && /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/.test(provenance.version)) links.push({
+		label: "updateNotesNpm",
+		href: `https://www.npmjs.com/package/${provenance.packageName}/v/${encodeURIComponent(provenance.version)}`
+	});
+	const repository = githubRepository(provenance.repositoryUrl);
+	if (repository) {
+		links.push({
+			label: "updateNotesReleases",
+			href: `${repository}/releases`
+		});
+		if (provenance.source === "github" && provenance.commit && /^[a-f0-9]{40}$/i.test(provenance.commit)) links.push({
+			label: "updateNotesCommit",
+			href: `${repository}/commit/${provenance.commit}`
+		});
+	}
+	return links;
+}
+function UpdateLinks({ provenance, t }) {
+	const links = updateLinks(provenance);
+	return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("p", {
+		className: "update-links",
+		children: [
+			t("updateNotesLabel"),
+			": ",
+			links.length ? links.map((link, index) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", { children: [index > 0 ? " · " : "", /* @__PURE__ */ (0, react_jsx_runtime.jsx)("a", {
+				href: link.href,
+				target: "_blank",
+				rel: "noopener noreferrer",
+				children: t(link.label)
+			})] }, link.href)) : t("updateNotesUnavailable")
+		]
+	});
+}
+
+//#endregion
 //#region src/client/trust-presentation.ts
 function presentInstallRisk(risk, t) {
 	return {
@@ -2193,6 +2353,14 @@ function UpdateReview({ items, issues = [], strategy = "preserve", accepted, onA
 									": ",
 									/* @__PURE__ */ (0, react_jsx_runtime.jsx)("code", { children: preflight.provenance.requestedTarget })
 								] }),
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)(UpdateLinks, {
+									provenance: preflight.provenance,
+									t
+								}),
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)(HostCompatibility, {
+									evidence: preflight.hostCompatibility,
+									t
+								}),
 								/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
 									className: "confirm-effects",
 									"aria-label": t("installSummary"),
@@ -3008,6 +3176,7 @@ function ManagedPage({ t, tracking, retryUpdate, onRetryConsumed, initialQuery =
 											className: "lede",
 											children: t("skillReinstallHint")
 										}) : null,
+										item.kind === "bundle" && ["@dsheval/dsh-top100-plugin", "@evaldock/dsh-top100-plugin"].includes(item.name) ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PluginUpgradeGuide, { t }) : null,
 										/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 											className: "managed-links",
 											children: [item.url ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("a", {
@@ -3511,15 +3680,19 @@ function RankingsPage({ t }) {
 					className: "head-copy",
 					children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 						className: "market-title-row",
-						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h2", { children: t("title") }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("a", {
-							className: "github-link",
-							href: "https://github.com/evaldock/dsh-top100",
-							"aria-label": "dsh-top100 GitHub",
-							title: "dsh-top100 GitHub",
-							target: "_blank",
-							rel: "noopener noreferrer",
-							children: GITHUB_ICON
-						})]
+						children: [
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h2", { children: t("title") }),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)(PluginVersion, {}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("a", {
+								className: "github-link",
+								href: "https://github.com/evaldock/dsh-top100",
+								"aria-label": "dsh-top100 GitHub",
+								title: "dsh-top100 GitHub",
+								target: "_blank",
+								rel: "noopener noreferrer",
+								children: GITHUB_ICON
+							})
+						]
 					}), data ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 						className: "meta",
 						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("a", {
@@ -3947,6 +4120,10 @@ function RankingsPage({ t }) {
 														children: preflight?.provenance.resolvedTarget ?? item.installSpec?.spec ?? "-"
 													})]
 												}) : null,
+												/* @__PURE__ */ (0, react_jsx_runtime.jsx)(HostCompatibility, {
+													evidence: preflight?.hostCompatibility,
+													t
+												}),
 												/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
 													className: "confirm-effects",
 													"aria-label": t("installSummary"),
@@ -4303,6 +4480,11 @@ const css = `
   min-width: 0;
   gap: 5px;
 }
+.dsh-top100 .plugin-version { font-size: 12px; font-weight: 400; color: var(--t100-muted); white-space: nowrap; }
+.dsh-top100 .plugin-upgrade-guide { max-width: 720px; color: var(--t100-body); }
+.dsh-top100 .plugin-upgrade-guide p { margin: 6px 0 0; font-size: 13px; line-height: 20px; }
+.dsh-top100 .plugin-upgrade-guide a, .dsh-top100 .update-links a { color: var(--t100-accent); }
+.dsh-top100 .confirm-effects code { overflow-wrap: anywhere; }
 .dsh-top100 .market-title-row {
   display: flex;
   align-items: center;
@@ -5187,7 +5369,8 @@ const css = `
 .dsh-top100 .managed-details > summary .facts { grid-column: 1 / -1; margin: 0 0 0 18px; font-weight: 400; }
 .dsh-top100 .managed-details > summary .badge { padding: 0; background: transparent; }
 .dsh-top100 .managed-details > summary .badge.warn { color: #9a6700; }
-.dsh-top100 .managed-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 10px 0 0; }
+.dsh-top100 .managed-body { font-size: 13px; line-height: 20px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 10px 0 0; }
+.dsh-top100 .managed-body strong { font-size: 14px; line-height: 20px; font-weight: 600; }
 .dsh-top100 .managed-body .facts { margin: 0; }
 .dsh-top100 .managed-body > * { min-width: 0; margin: 0; overflow-wrap: anywhere; }
 .dsh-top100 .managed-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
@@ -6205,6 +6388,26 @@ const css = `
 //#endregion
 //#region src/client/locales.ts
 const zh = {
+	"updateNotesLabel": "更新说明",
+	"updateNotesNpm": "目标 npm 版本",
+	"updateNotesReleases": "仓库发布记录",
+	"updateNotesCommit": "目标提交详情",
+	"updateNotesUnavailable": "暂无可核对的说明链接",
+	"selfUpgradeTitle": "升级说明",
+	"selfUpgradeHint": "沿用原安装方式，选择已发布的 Top100 版本进行升级；完成后重启 DSH，并核对这里的版本与功能。",
+	"selfUpgradeVersions": "查看已发布版本",
+	"selfUpgradeGuide": "安装与升级指南",
+	"selfUpgradeLocalHint": "本地候选版可能比 npm 正式版更新，请先比较版本，避免降级。Top100 自身升级请在 DSH 的插件管理或终端中操作。",
+	"hostCompatibility": "DSH 版本要求",
+	"hostCurrent": "当前 DSH",
+	"host_matched": "版本声明匹配",
+	"host_mismatch": "版本声明不匹配",
+	"host_unknown": "版本兼容性未知",
+	"host_checked": "仅核对版本声明，不代表已经验证运行。版本豁免与最终加载结果由 DSH 判断。",
+	"host_runtime-unavailable": "无法读取当前 DSH 版本，暂不能判断是否匹配。",
+	"host_not-declared": "目标包未声明 DSH 版本要求，暂不能判断是否兼容。",
+	"host_invalid-declaration": "目标包的版本声明无效或不可用，暂不能判断是否兼容。",
+	"hostMismatchHint": "建议选择适配当前 DSH 的版本。此处确认不会授予 DSH 版本豁免。",
 	taskDependencies: "正在处理依赖",
 	taskNetworkRetry: "网络请求失败，正在等待重试",
 	taskRecoveringDependencies: "正在恢复原有依赖，请等待恢复结束",
@@ -6300,7 +6503,7 @@ const zh = {
 	installAvailability: "安装来源",
 	installAvailability_installable: "有安装源",
 	installAvailability_all: "全部插件",
-	installAvailability_unavailable: "未识别安装源",
+	installAvailability_unavailable: "未找到安装命令",
 	installableOnly: "仅看有安装源",
 	sortBy: "排序",
 	starsSort: "GitHub Stars",
@@ -6375,7 +6578,7 @@ const zh = {
 	installedManagerHint: "插件属于当前 Profile；Skills 为用户全局共享。Skill 卸载或替换前会完整备份原目录。",
 	profile: "当前配置（Profile）",
 	managedItems: "个已安装项目",
-	bundleKind: "插件（Bundle）",
+	bundleKind: "DSH 插件包",
 	skillKind: "技能（Skill）",
 	project: "项目",
 	installedPluginFallback: "已安装的 DSH 插件",
@@ -6443,25 +6646,27 @@ const zh = {
 	manageCancelled: "操作已取消，请查看对应插件的恢复结果。",
 	confirmRemoveSkill: "这个 Skill 由所有 Profile 共用。卸载会影响所有 Profile；原目录及本地修改会完整保留到 DSH_HOME/skill-backups，操作结果会显示备份路径。确定卸载？",
 	confirmRemovePlugin: "确定卸载这个插件？",
-	browseOnly: "未识别安装源",
-	browseOnlyHint: "暂未识别到匹配当前项目的安装源，不代表无法安装；请前往 GitHub 查看说明。",
-	capabilityReview: "收录依据待复核",
-	capabilityReviewReason: "仓库结构尚未重新确认，历史收录不代表当前可安装",
-	capabilitySource_verified: "来源已预检",
-	capabilitySource_verifiedReason: "已核对清单元数据中的来源、Bundle 声明及版本；发布归档、安装、宿主兼容及功能仍需验证",
-	capabilitySource_invalid: "来源预检未通过",
-	capabilitySource_invalidReason: "来源结构或身份检查未通过，可重新预检或查看作者说明",
-	capabilitySource_unavailable: "来源暂未确认",
-	capabilitySource_unavailableReason: "本次未能完成来源检查，可能为网络或限流；不代表无法安装",
-	capabilitySource_stale: "来源需重新预检",
-	capabilitySource_staleReason: "历史来源检查已过期，安装前会重新核对当前版本",
-	capabilityReady: "已识别安装源",
-	capabilityReadyReason: "点击后核对精确来源与脚本；识别到安装源不保证安装成功或通过安全审核",
+	browseOnly: "未找到安装命令",
+	browseOnlyHint: "尚未找到匹配当前项目的 DSH 安装命令，不代表无法安装；请前往 GitHub 查看说明。",
+	capabilityFunctionReview: "功能说明待确认",
+	capabilityFunctionReviewReason: "已识别到 DSH 组件，但用于确认功能的源码发生了变化；旧简介暂停展示，请查看作者说明",
+	capabilityReview: "插件身份待确认",
+	capabilityReviewReason: "尚未确认该项目当前是否仍提供 DSH 插件；历史收录不代表当前可安装，请查看作者说明",
+	capabilitySource_verified: "安装信息已核对",
+	capabilitySource_verifiedReason: "已核对安装包资料中的仓库归属、插件声明及版本；尚未实际安装或测试功能，不代表通过安全审核",
+	capabilitySource_invalid: "安装信息检查未通过",
+	capabilitySource_invalidReason: "安装包资料或仓库归属检查未通过，请查看检查记录和作者安装说明",
+	capabilitySource_unavailable: "安装信息暂未核实",
+	capabilitySource_unavailableReason: "已找到安装命令，但未能读取完整的安装包信息；可能为网络或限流，不代表无法安装",
+	capabilitySource_stale: "安装信息需重新核对",
+	capabilitySource_staleReason: "已找到安装命令，但现有检查记录已过期或时间无效；安装前会重新核对当前版本",
+	capabilityReady: "已找到安装命令",
+	capabilityReadyReason: "已找到安装命令，尚未核对安装包信息；点击安装后检查具体版本和脚本，不保证安装成功或通过安全审核",
 	capabilityManual: "安装后需配置",
 	capabilityManualReason: "目录提供安装目标，但作者标注安装后还需配置",
 	capabilityBrowse: "生态项目",
-	capabilityUnavailable: "未识别安装源",
-	capabilityNoSourceReason: "暂未识别到匹配的安装源，不代表无法安装；请查看项目说明",
+	capabilityUnavailable: "未找到安装命令",
+	capabilityNoSourceReason: "尚未找到匹配的 DSH 安装命令，不代表无法安装；请查看项目说明",
 	capabilityUnverifiedReason: "尚未确认符合 DSH 插件结构",
 	capabilityInstalled: "已安装",
 	capabilityInstalledReason: "当前 Profile 已包含这个项目",
@@ -6631,7 +6836,7 @@ const zh = {
 	evidenceSignalDshSkill: "声明为 DSH Skill",
 	evidenceSignalAgentSkill: "声明为通用 Agent Skill",
 	evidenceSignalThemeBundle: "命中 DSH/Cordis 主题 Bundle 结构",
-	evidenceSignalDshBundle: "命中 DSH Bundle 结构",
+	evidenceSignalDshBundle: "已识别 DSH 插件包结构",
 	evidenceSignalDshClient: "已识别 DSH 客户端插件结构",
 	evidenceSignalDshPlugin: "已识别 DSH 宿主插件结构",
 	evidenceSignalInstallSource: "安装源可解析",
@@ -6647,7 +6852,7 @@ const zh = {
 	trust_indexed: "已收录，结构待确认",
 	trust_structured: "符合 DSH 插件结构",
 	"trust_install-source": "目录含安装目标",
-	"form_dsh-bundle": "DSH Bundle",
+	"form_dsh-bundle": "DSH 插件包",
 	"form_dsh-client": "DSH 客户端插件",
 	"form_dsh-plugin": "DSH 插件",
 	"form_dsh-skill": "DSH Skill",
@@ -6695,6 +6900,26 @@ const zh = {
 	diagOrphans: "孤立停用项"
 };
 const en = {
+	"updateNotesLabel": "Update notes",
+	"updateNotesNpm": "Target npm version",
+	"updateNotesReleases": "Repository releases",
+	"updateNotesCommit": "Target commit",
+	"updateNotesUnavailable": "No verified reference links available",
+	"selfUpgradeTitle": "Upgrade guide",
+	"selfUpgradeHint": "Use your original installation method and choose a published Top100 version. Restart DSH afterwards, then verify the version here and check functionality.",
+	"selfUpgradeVersions": "Published versions",
+	"selfUpgradeGuide": "Installation and upgrade guide",
+	"selfUpgradeLocalHint": "A local candidate may be newer than the npm release. Compare versions first to avoid downgrading. Upgrade Top100 through DSH plugin management or the terminal.",
+	"hostCompatibility": "DSH version requirements",
+	"hostCurrent": "Current DSH",
+	"host_matched": "Version declarations match",
+	"host_mismatch": "Version declarations do not match",
+	"host_unknown": "Version compatibility unknown",
+	"host_checked": "Version declarations only; runtime behavior has not been verified. DSH owns version exemptions and final activation.",
+	"host_runtime-unavailable": "The running DSH version could not be read, so compatibility is unknown.",
+	"host_not-declared": "This package declares no DSH version requirements; compatibility is unknown.",
+	"host_invalid-declaration": "Version declarations are invalid or unavailable; compatibility is unknown.",
+	"hostMismatchHint": "Choose a version compatible with this DSH runtime. Confirming here does not grant a DSH version exemption.",
 	taskDependencies: "Processing dependencies",
 	taskNetworkRetry: "Network request failed; waiting to retry",
 	taskRecoveringDependencies: "Restoring previous dependencies; please wait",
@@ -6790,7 +7015,7 @@ const en = {
 	installAvailability: "Install source",
 	installAvailability_installable: "Source identified",
 	installAvailability_all: "All plugins",
-	installAvailability_unavailable: "No install source identified",
+	installAvailability_unavailable: "No install command found",
 	installableOnly: "With install source only",
 	sortBy: "Sort",
 	starsSort: "GitHub Stars",
@@ -6865,7 +7090,7 @@ const en = {
 	installedManagerHint: "Plugins belong to this Profile. Skills are shared globally; their complete directory is backed up before removal or replacement.",
 	profile: "Profile",
 	managedItems: "items",
-	bundleKind: "Plugin (Bundle)",
+	bundleKind: "DSH plugin package",
 	skillKind: "Skill",
 	project: "Project",
 	installedPluginFallback: "Installed DSH plugin",
@@ -6933,25 +7158,27 @@ const en = {
 	manageCancelled: "Operations were cancelled. Check the affected plugins for recovery results.",
 	confirmRemoveSkill: "This Skill is shared by every Profile. Removal affects all Profiles. Its entire directory and local changes will be kept in DSH_HOME/skill-backups; the result will show the backup path. Uninstall it?",
 	confirmRemovePlugin: "Uninstall this plugin?",
-	browseOnly: "No install source identified",
-	browseOnlyHint: "No matching install source has been identified; this does not mean installation is impossible. Check GitHub for instructions.",
-	capabilityReview: "Catalog evidence needs review",
-	capabilityReviewReason: "Repository structure has not been reconfirmed; past indexing does not prove installability",
-	capabilitySource_verified: "Source preflight passed",
-	capabilitySource_verifiedReason: "Manifest metadata checked for identity, Bundle declaration and version; release archives, installation, host compatibility and functionality remain unverified",
-	capabilitySource_invalid: "Source preflight failed",
-	capabilitySource_invalidReason: "Source structure or identity check failed; retry preflight or read the author instructions",
-	capabilitySource_unavailable: "Source not yet confirmed",
-	capabilitySource_unavailableReason: "Source check could not finish, possibly due to network or rate limits; this does not mean installation is impossible",
-	capabilitySource_stale: "Source needs a fresh check",
-	capabilitySource_staleReason: "Historical source check expired; installation will recheck the current version",
-	capabilityReady: "Install source identified",
-	capabilityReadyReason: "Review exact source and scripts after click; source recognition does not guarantee installation or security",
+	browseOnly: "No install command found",
+	browseOnlyHint: "No matching DSH install command was found; this does not mean installation is impossible. Check GitHub for instructions.",
+	capabilityFunctionReview: "Function description needs confirmation",
+	capabilityFunctionReviewReason: "A DSH component was identified, but the source used to confirm its functionality has changed; the old description is withheld. Check the author instructions",
+	capabilityReview: "Plugin identity needs confirmation",
+	capabilityReviewReason: "The project has not been reconfirmed as a current DSH plugin; past indexing does not prove installability. Check the author instructions",
+	capabilitySource_verified: "Install information checked",
+	capabilitySource_verifiedReason: "Package metadata checked for repository ownership, plugin declaration and version; installation and functionality have not been tested. This is not a security review",
+	capabilitySource_invalid: "Install information check failed",
+	capabilitySource_invalidReason: "Package metadata or repository ownership checks failed; read the check details and author installation instructions",
+	capabilitySource_unavailable: "Install information not yet checked",
+	capabilitySource_unavailableReason: "An install command was found, but package information could not be fully read, possibly due to network or rate limits; this does not mean installation is impossible",
+	capabilitySource_stale: "Install information needs rechecking",
+	capabilitySource_staleReason: "An install command was found, but the check record has expired or has an invalid timestamp; installation will recheck the current version",
+	capabilityReady: "Install command found",
+	capabilityReadyReason: "An install command was found, but package information has not been checked; review the exact version and scripts before installing. This does not guarantee installation or security",
 	capabilityManual: "Configure after install",
 	capabilityManualReason: "The catalog has an install target, and the author marks additional configuration as required",
 	capabilityBrowse: "Ecosystem project",
-	capabilityUnavailable: "No install source identified",
-	capabilityNoSourceReason: "No matching source has been identified yet; check the project instructions for other installation methods",
+	capabilityUnavailable: "No install command found",
+	capabilityNoSourceReason: "No matching DSH install command was found; check the project instructions for other installation methods",
 	capabilityUnverifiedReason: "DSH plugin structure has not been confirmed",
 	capabilityInstalled: "Installed",
 	capabilityInstalledReason: "This item is already in the current profile",
@@ -7121,7 +7348,7 @@ const en = {
 	evidenceSignalDshSkill: "Declared as a DSH Skill",
 	evidenceSignalAgentSkill: "Declared as a general Agent Skill",
 	evidenceSignalThemeBundle: "Matches the DSH/Cordis theme Bundle structure",
-	evidenceSignalDshBundle: "Matches the DSH Bundle structure",
+	evidenceSignalDshBundle: "Matches the DSH plugin package structure",
 	evidenceSignalDshClient: "DSH client plugin structure identified",
 	evidenceSignalDshPlugin: "DSH host plugin structure identified",
 	evidenceSignalInstallSource: "Install source resolved",
@@ -7137,7 +7364,7 @@ const en = {
 	trust_indexed: "Listed; structure unconfirmed",
 	trust_structured: "Matches the DSH plugin structure",
 	"trust_install-source": "Catalog has an install target",
-	"form_dsh-bundle": "DSH Bundle",
+	"form_dsh-bundle": "DSH plugin package",
 	"form_dsh-client": "DSH client plugin",
 	"form_dsh-plugin": "DSH plugin",
 	"form_dsh-skill": "DSH Skill",

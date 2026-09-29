@@ -14,6 +14,9 @@ export function presentInstallCapability(item: CatalogItem): InstallCapabilityPr
   if (item.installed) {
     return { kind: "installed", labelKey: "capabilityInstalled", reasonKey: "capabilityInstalledReason" };
   }
+  if (discoveryNeedsReview(item) && item.install?.discovery?.functionReview?.decision === "held") {
+    return { kind: "browse", labelKey: "capabilityFunctionReview", reasonKey: "capabilityFunctionReviewReason" };
+  }
   if (discoveryNeedsReview(item)) return { kind: "browse", labelKey: "capabilityReview", reasonKey: "capabilityReviewReason" };
   const sourceStatus = catalogSourceStatus(item);
   if (sourceStatus === "invalid" || sourceStatus === "unavailable" || sourceStatus === "stale") {

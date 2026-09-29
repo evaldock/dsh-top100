@@ -11,6 +11,22 @@ afterEach(() => {
 });
 
 describe("install source verification", () => {
+  it.each(["npm", "github"] as const)("accepts multiple bundle patches from %s and retains exact DSH peers", async (source) => {
+    const manifest = { name: "demo", version: "1.0.0", dist: { integrity: "sha512-test" },
+      dsh: { bundle: { patch: ["./a.yml", "./b.yml"] } },
+      peerDependencies: { "@deepseek-ai/dsh-tools": "^0.2.0-rc.1", "@deepseek-ai/cordis": "^4" } };
+    const sha = "a".repeat(40);
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => new Response(JSON.stringify(
+      source === "npm" ? manifest : url.includes("/commits/") ? { sha }
+        : { content: Buffer.from(JSON.stringify(manifest)).toString("base64") }))));
+    expect(await verifyInstallSpec(source === "npm" ? { kind: "npm", spec: "demo@1.0.0" } : { kind: "github", spec: "github:acme/demo#main" }))
+      .toMatchObject({ dshPeers: { "@deepseek-ai/dsh-tools": "^0.2.0-rc.1" } });
+  });
+  it.each([[], ["./a.yml", 4], [""], ["./a.yml", "  "], { file: "a.yml" }])("rejects an empty or malformed patch list %j", async (patch) => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ name: "demo", version: "1.0.0", dist: { integrity: "sha512-test" }, dsh: { bundle: { patch } } }))));
+    await expect(verifyInstallSpec({ kind: "npm", spec: "demo@1.0.0" })).rejects.toMatchObject({ reason: "invalid-manifest" });
+  });
+
   it.each([
     ["^1.0.0", "1.9.0"], ["~1.2.0", "1.2.8"], [">=1.2.0 <1.8.0", "1.2.8"],
     ["1.0.0 - 1.2.8", "1.2.8"], ["1.x || 2.x", "2.4.0"], ["^2.5.0-beta.1", "2.5.0-beta.3"],

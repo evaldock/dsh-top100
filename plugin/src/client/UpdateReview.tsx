@@ -1,3 +1,5 @@
+import { UpdateLinks } from "./UpdateLinks.js";
+import { HostCompatibility } from "./HostCompatibility.js";
 import type { UpdatePreflightItem, UpdatePreflightIssue, UpdateStrategy } from "../shared/types.js";
 import type { Translate } from "./locales.js";
 import { visibleInstallReviewRisks } from "./install-review-presentation.js";
@@ -21,7 +23,9 @@ export function UpdateReview({ items, issues = [], strategy = "preserve", accept
         {items.map(({ name, currentVersion, preflight }) => <div className="confirm-item" key={name}>
           <div className="confirm-project"><strong>{name}</strong><p>{t("version")}: {currentVersion ?? "—"} → <code className="confirm-target">{preflight.provenance.resolvedTarget}</code></p></div>
           <p>{t("updateTarget")}: <code>{preflight.provenance.requestedTarget}</code></p>
-          <section className="confirm-effects" aria-label={t("installSummary")}>
+          <UpdateLinks provenance={preflight.provenance} t={t} />
+          <HostCompatibility evidence={preflight.hostCompatibility} t={t} />
+                  <section className="confirm-effects" aria-label={t("installSummary")}>
             {preflight.lifecycleScripts.length > 0 ? <div className="confirm-scripts" data-warning="true">
               <p>{t("confirmScripts")}</p>
               {preflight.lifecycleScripts.map((script) => <div className="script-evidence" key={script.name}><span>{script.name}</span><span aria-hidden="true">→</span><code>{script.command}</code></div>)}

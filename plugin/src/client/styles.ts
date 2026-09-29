@@ -75,6 +75,11 @@ export const css = `
   min-width: 0;
   gap: 5px;
 }
+.dsh-top100 .plugin-version { font-size: 12px; font-weight: 400; color: var(--t100-muted); white-space: nowrap; }
+.dsh-top100 .plugin-upgrade-guide { max-width: 720px; color: var(--t100-body); }
+.dsh-top100 .plugin-upgrade-guide p { margin: 6px 0 0; font-size: 13px; line-height: 20px; }
+.dsh-top100 .plugin-upgrade-guide a, .dsh-top100 .update-links a { color: var(--t100-accent); }
+.dsh-top100 .confirm-effects code { overflow-wrap: anywhere; }
 .dsh-top100 .market-title-row {
   display: flex;
   align-items: center;
@@ -959,7 +964,8 @@ export const css = `
 .dsh-top100 .managed-details > summary .facts { grid-column: 1 / -1; margin: 0 0 0 18px; font-weight: 400; }
 .dsh-top100 .managed-details > summary .badge { padding: 0; background: transparent; }
 .dsh-top100 .managed-details > summary .badge.warn { color: #9a6700; }
-.dsh-top100 .managed-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 10px 0 0; }
+.dsh-top100 .managed-body { font-size: 13px; line-height: 20px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 10px 0 0; }
+.dsh-top100 .managed-body strong { font-size: 14px; line-height: 20px; font-weight: 600; }
 .dsh-top100 .managed-body .facts { margin: 0; }
 .dsh-top100 .managed-body > * { min-width: 0; margin: 0; overflow-wrap: anywhere; }
 .dsh-top100 .managed-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }

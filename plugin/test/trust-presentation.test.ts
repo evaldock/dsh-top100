@@ -38,7 +38,7 @@ describe("trust evidence presentation", () => {
     const presented = presentCatalogEvidence(evidence, "npm", translator(en));
     expect(presented.signals).toEqual([
       "Listed in the DSHEval index",
-      "Matches the DSH Bundle structure",
+      "Matches the DSH plugin package structure",
       "Install source resolved (npm)",
     ]);
     expect(presented.caveat).toContain("not a security review");

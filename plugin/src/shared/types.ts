@@ -3,6 +3,8 @@ import type { HostRuntimeStatus } from "../host/runtime-status.js";
 /** Shared shapes for the published rankings JSON and the plugin HTTP API. */
 
 export interface DiscoveryEvidence {
+  /** Presentation only: the catalog owns the full source-review record. */
+  functionReview?: { decision: "equivalent" | "held" };
   status: "verified" | "review-required";
   kind: "bundle" | "client" | "host" | "skill";
   evidence: string[];
@@ -267,7 +269,15 @@ export interface InstallRiskEvidence {
   detail: string;
 }
 
+export interface HostCompatibility {
+  runtimeVersion: string | null;
+  status: "matched" | "mismatch" | "unknown";
+  reason: "checked" | "runtime-unavailable" | "not-declared" | "invalid-declaration";
+  requirements: { name: string; range: string; matched: boolean | null }[];
+}
+
 export interface InstallPreflight {
+  hostCompatibility?: HostCompatibility;
   approvalToken: string;
   expiresAt: number;
   fullName: string;
