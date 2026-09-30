@@ -7,7 +7,7 @@ describe("declared DSH compatibility", () => {
   it.each(["3.18.2", "3.18.4"])("accepts schemastery %s shipped by supported hosts", (version) => {
     expect(satisfies(version, manifest.peerDependencies["@deepseek-ai/schemastery"])).toBe(true);
   });
-  it.each(["0.1.5-rc.2", "0.1.5-rc.3", "0.1.6-alpha.2", "0.1.7-rc.1", "0.1.7-rc.2", "0.2.0-rc.1"])("accepts %s with ordinary npm prerelease resolution", (version) => {
+  it.each(["0.1.5-rc.2", "0.1.5-rc.3", "0.1.6-alpha.2", "0.1.7-rc.1", "0.1.7-rc.2", "0.2.0-rc.1", "0.2.0-rc.2"])("accepts %s with ordinary npm prerelease resolution", (version) => {
     for (const [name, range] of Object.entries(manifest.peerDependencies)) {
       if (name.startsWith("@deepseek-ai/dsh-")) expect(satisfies(version, range as string), name).toBe(true);
     }

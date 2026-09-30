@@ -149,7 +149,7 @@ export const css = `
 .dsh-top100 .page-tabs {
   display: flex;
   overflow-x: auto;
-  gap: 2px;
+  gap: 6px;
   padding: 0 0 8px;
   border-bottom: 1px solid var(--t100-line);
 }
@@ -158,15 +158,15 @@ export const css = `
   flex: 0 0 auto;
   white-space: nowrap;
   border: 0;
-  border-bottom: 2px solid transparent;
-  border-radius: 0;
+  border-radius: 7px;
   color: var(--t100-muted);
-  font-weight: 600;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
 }
 .dsh-top100 .page-tabs button[aria-selected="true"] {
   color: var(--t100-accent);
-  border-bottom-color: var(--t100-accent);
-  background: transparent;
+  background: var(--t100-accent-soft);
 }
 .dsh-top100 input[type="search"] {
   flex: 1 1 auto;

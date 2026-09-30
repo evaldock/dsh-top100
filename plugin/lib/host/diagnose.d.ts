@@ -4,6 +4,7 @@ import { type DiagnosticReport, type RankingsDocument } from "../shared/types.js
 export interface DiagnoseOptions {
     readRuntime?: PluginHost["readRuntime"];
     profileDir?: string;
+    installAnchor?: string;
     dataUrl?: string;
     document?: RankingsDocument | null;
     fetchCatalog?: boolean;

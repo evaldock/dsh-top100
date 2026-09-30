@@ -217,6 +217,11 @@ describe("catalog filter", () => {
     expect(result.items[0]).toMatchObject({ installable: true, installed: true, installSpec: { kind: "npm", spec: "demo" } });
     expect(result.items[0].evidence?.signalCodes).toContain("install-source");
   });
+  it("offers Web-documented plugins in the Desktop installable filter", () => {
+    const result = filterCatalog(document, { view: "hot", category: null, query: "", offset: 0, limit: 10, installed: {}, profile: "desktop", installAvailability: "installable" });
+    expect(result.total).toBe(1);
+    expect(result.items[0]).toMatchObject({ fullName: "acme/hot-one", installable: true, installSpec: { kind: "npm", spec: "@acme/hot-one" } });
+  });
   it("returns the selected view when there is no query", () => {
     const result = filterCatalog(document, {
       view: "hot",

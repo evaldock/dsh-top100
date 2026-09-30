@@ -32,6 +32,7 @@ const STALE_DAYS = 14;
 export interface DiagnoseOptions {
   readRuntime?: PluginHost["readRuntime"];
   profileDir?: string;
+  installAnchor?: string;
   dataUrl?: string;
   document?: RankingsDocument | null;
   fetchCatalog?: boolean;
@@ -170,7 +171,7 @@ export async function buildDiagnosticReport(profile: string, options: DiagnoseOp
   if (!catalog.ok) findings.push({ severity: "error", code: "catalog-unreachable", subject: dataUrl, message: catalog.error ?? "榜单不可用" });
   else if ((catalog.staleDays ?? 0) > STALE_DAYS) findings.push({ severity: "warning", code: "catalog-stale", subject: dataUrl, message: `榜单快照已有 ${catalog.staleDays} 天`, parameters: { days: catalog.staleDays! } });
 
-  const hostDir = findDshInstallDir();
+  const hostDir = options.installAnchor ? dirname(options.installAnchor) : findDshInstallDir();
   const bundles: DiagnosticBundle[] = [];
   const peers: DiagnosticPeer[] = [];
   const hostDeps: DiagnosticHostDep[] = [];

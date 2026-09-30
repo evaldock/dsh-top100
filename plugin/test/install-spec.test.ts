@@ -79,6 +79,17 @@ describe("parseInstallSpec", () => {
 });
 
 describe("resolveInstallSpec", () => {
+  it("uses a Web installation source in Desktop without carrying the author's destination", () => {
+    const plugin = entry({ fullName: "acme/demo", type: "cordis-plugin", install: { packageName: "demo", commands: ["dsh plugin --profile web add --save-exact demo@1.2.3"] } });
+    expect(resolveInstallSpec(plugin, "desktop")).toEqual({ kind: "npm", spec: "demo@1.2.3" });
+    expect(resolveInstallSpec(plugin, "research")).toBeNull();
+  });
+  it("does not relax custom Profiles or registries for Desktop", () => {
+    for (const command of ["dsh plugin --profile research add demo", "dsh plugin --profile web add demo --registry https://private.example/"]) {
+      const plugin = entry({ fullName: "acme/demo", type: "cordis-plugin", install: { packageName: "demo", commands: [command] } });
+      expect(resolveInstallSpec(plugin, "desktop")).toBeNull();
+    }
+  });
   it("respects a caller's actual custom Profile", () => {
     const plugin = entry({ fullName: "acme/demo", type: "cordis-plugin", install: { packageName: "demo", commands: ["dsh plugin --profile demo add demo"] } });
     expect(resolveInstallSpec(plugin)).toBeNull();

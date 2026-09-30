@@ -807,6 +807,9 @@ export function mountRoutes(
     throw new Error(`dsh-top100: invalid profile name ${JSON.stringify(config.profile)}`);
   }
   const registerRoute: PluginHost["webServer"]["register"] = (route) => host.webServer.register({ ...route, async handler(request, response) {
+    if (host.authorizeRequest && !host.authorizeRequest(request)) {
+      sendJson(response, 403, { error: "authenticated DSH request required" }); return;
+    }
     if (restartPending && request.method === "POST" && route.path !== "/dsh-top100/restart") {
       sendJson(response, 409, { error: "DSH is restarting" }); return;
     }
@@ -815,6 +818,8 @@ export function mountRoutes(
     try { await route.handler(request, response); }
     finally { if (mutation) activeMutations -= 1; }
   } });
+  const trustedMutation = (request: Parameters<typeof sameOrigin>[0]) =>
+    host.authorizeRequest ? host.authorizeRequest(request) : sameOrigin(request);
   const restartStatus = (request: Parameters<typeof trustedRestartRequest>[0]) => trustedRestartRequest(request, false)
     ? host.restartCapability?.() ?? { available: false, reason: "launcher" }
     : { available: false, reason: "remote" };
@@ -1001,7 +1006,7 @@ export function mountRoutes(
       kind: "exact",
       path: "/dsh-top100/install-preflight",
       async handler(request, response) {
-        if (request.method !== "POST" || !sameOrigin(request)) {
+        if (request.method !== "POST" || !trustedMutation(request)) {
           sendJson(response, 403, { error: "same-origin POST required" });
           return;
         }
@@ -1092,7 +1097,7 @@ export function mountRoutes(
       kind: "exact",
       path: "/dsh-top100/cancel-submission",
       async handler(request, response) {
-        if (request.method !== "POST" || !sameOrigin(request)) { sendJson(response, 403, { error: "same-origin POST required" }); return; }
+        if (request.method !== "POST" || !trustedMutation(request)) { sendJson(response, 403, { error: "same-origin POST required" }); return; }
         try {
           const body = readBodyRecord(await readJsonBody(request));
           const key = submissionKey(config, body.submissionId);
@@ -1110,7 +1115,7 @@ export function mountRoutes(
       kind: "exact",
       path: "/dsh-top100/cancel",
       async handler(request, response) {
-        if (request.method !== "POST" || !sameOrigin(request)) {
+        if (request.method !== "POST" || !trustedMutation(request)) {
           sendJson(response, 403, { error: "same-origin POST required" });
           return;
         }
@@ -1130,7 +1135,7 @@ export function mountRoutes(
       kind: "exact",
       path: "/dsh-top100/install-batch",
       async handler(request, response) {
-        if (request.method !== "POST" || !sameOrigin(request)) {
+        if (request.method !== "POST" || !trustedMutation(request)) {
           sendJson(response, 403, { error: "same-origin POST required" });
           return;
         }
@@ -1163,7 +1168,7 @@ export function mountRoutes(
       kind: "exact",
       path: "/dsh-top100/retry",
       async handler(request, response) {
-        if (request.method !== "POST" || !sameOrigin(request)) {
+        if (request.method !== "POST" || !trustedMutation(request)) {
           sendJson(response, 403, { error: "same-origin POST required" });
           return;
         }
@@ -1193,7 +1198,7 @@ export function mountRoutes(
       kind: "exact",
       path: "/dsh-top100/cancel-all",
       handler(request, response) {
-        if (request.method !== "POST" || !sameOrigin(request)) {
+        if (request.method !== "POST" || !trustedMutation(request)) {
           sendJson(response, 403, { error: "same-origin POST required" });
           return;
         }
@@ -1245,7 +1250,7 @@ export function mountRoutes(
       kind: "exact",
       path: "/dsh-top100/toggle",
       async handler(request, response) {
-        if (request.method !== "POST" || !sameOrigin(request)) { sendJson(response, 403, { error: "same-origin POST required" }); return; }
+        if (request.method !== "POST" || !trustedMutation(request)) { sendJson(response, 403, { error: "same-origin POST required" }); return; }
         try {
           const body = readBodyRecord(await readJsonBody(request));
           const name = typeof body.name === "string" ? body.name.trim() : "";
@@ -1262,7 +1267,7 @@ export function mountRoutes(
       kind: "exact",
       path: "/dsh-top100/source-migration",
       async handler(request, response) {
-        if (request.method !== "POST" || !sameOrigin(request)) { sendJson(response, 403, { error: "same-origin POST required" }); return; }
+        if (request.method !== "POST" || !trustedMutation(request)) { sendJson(response, 403, { error: "same-origin POST required" }); return; }
         try {
           const body = readBodyRecord(await readJsonBody(request));
           if (body.action === "preflight") {
@@ -1283,7 +1288,7 @@ export function mountRoutes(
       kind: "exact",
       path: "/dsh-top100/update-preflight-session",
       async handler(request, response) {
-        if (request.method !== "POST" || !sameOrigin(request)) { sendJson(response, 403, { error: "same-origin POST required" }); return; }
+        if (request.method !== "POST" || !trustedMutation(request)) { sendJson(response, 403, { error: "same-origin POST required" }); return; }
         try {
           const body = readBodyRecord(await readJsonBody(request, MAX_BATCH_BODY_BYTES));
           if (body.action === "start") {
@@ -1306,7 +1311,7 @@ export function mountRoutes(
       kind: "exact",
       path: "/dsh-top100/update-preflight",
       async handler(request, response) {
-        if (request.method !== "POST" || !sameOrigin(request)) {
+        if (request.method !== "POST" || !trustedMutation(request)) {
           sendJson(response, 403, { error: "same-origin POST required" }); return;
         }
         const controller = new AbortController();
@@ -1361,7 +1366,7 @@ export function mountRoutes(
       kind: "exact",
       path: "/dsh-top100/manage",
       async handler(request, response) {
-        if (request.method !== "POST" || !sameOrigin(request)) { sendJson(response, 403, { error: "same-origin POST required" }); return; }
+        if (request.method !== "POST" || !trustedMutation(request)) { sendJson(response, 403, { error: "same-origin POST required" }); return; }
         try {
           const body = readBodyRecord(await readJsonBody(request, MAX_UPDATE_BODY_BYTES));
           const submission = prepareSubmission(config, "/dsh-top100/manage", body);
@@ -1431,7 +1436,7 @@ export function mountRoutes(
       async handler(request, response) {
         if (request.method !== "GET") { sendJson(response, 405, { error: "method not allowed" }); return; }
         try {
-          sendJson(response, 200, await buildDiagnosticReport(config.profile, { dataUrl: config.dataUrl || DEFAULT_DATA_URL, profileDir: config.profileDirectory, readRuntime: observeRuntime }));
+          sendJson(response, 200, await buildDiagnosticReport(config.profile, { dataUrl: config.dataUrl || DEFAULT_DATA_URL, profileDir: config.profileDirectory, installAnchor: config.installAnchor, readRuntime: observeRuntime }));
         } catch (error) { sendJson(response, 502, { error: error instanceof Error ? error.message : String(error) }); }
       },
     }),
@@ -1439,7 +1444,7 @@ export function mountRoutes(
       kind: "exact",
       path: "/dsh-top100/install",
       async handler(request, response) {
-        if (request.method !== "POST" || !sameOrigin(request)) {
+        if (request.method !== "POST" || !trustedMutation(request)) {
           sendJson(response, 403, { error: "same-origin POST required" });
           return;
         }

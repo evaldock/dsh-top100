@@ -161,7 +161,8 @@ function parseDshInstallCommandDetails(value) {
   return target ? { target, profile, registry, saveExact, workspace } : null;
 }
 function isDshInstallCommandCompatible(command, options = {}) {
-  return (command.profile === null || command.profile === (options.profile ?? "web")) && (command.registry === null || command.registry === "https://registry.npmjs.org/");
+  const profile = options.profile ?? "web";
+  return (command.profile === null || command.profile === profile || profile === "desktop" && command.profile === "web") && (command.registry === null || command.registry === "https://registry.npmjs.org/");
 }
 function parseDshInstallCommand(value) {
   return parseDshInstallCommandDetails(value)?.target ?? null;

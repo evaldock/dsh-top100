@@ -172,7 +172,7 @@ export async function buildDiagnosticReport(profile, options = {}) {
         findings.push({ severity: "error", code: "catalog-unreachable", subject: dataUrl, message: catalog.error ?? "榜单不可用" });
     else if ((catalog.staleDays ?? 0) > STALE_DAYS)
         findings.push({ severity: "warning", code: "catalog-stale", subject: dataUrl, message: `榜单快照已有 ${catalog.staleDays} 天`, parameters: { days: catalog.staleDays } });
-    const hostDir = findDshInstallDir();
+    const hostDir = options.installAnchor ? dirname(options.installAnchor) : findDshInstallDir();
     const bundles = [];
     const peers = [];
     const hostDeps = [];

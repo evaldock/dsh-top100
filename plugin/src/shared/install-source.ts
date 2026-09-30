@@ -131,9 +131,12 @@ export function parseDshInstallCommandDetails(value: unknown): DshInstallCommand
   return target ? { target, profile, registry, saveExact, workspace } : null;
 }
 
-/** Public npm is supported; an explicit author Profile must match the requested destination. */
+/** Desktop hosts the Web UI too. Treat an author's standard Web destination as
+ * portable to Desktop; callers still execute against their actual Profile.
+ * Custom Profile requirements and non-public registries remain restricted. */
 export function isDshInstallCommandCompatible(command: DshInstallCommandDetails, options: { profile?: string } = {}): boolean {
-  return (command.profile === null || command.profile === (options.profile ?? "web"))
+  const profile = options.profile ?? "web";
+  return (command.profile === null || command.profile === profile || (profile === "desktop" && command.profile === "web"))
     && (command.registry === null || command.registry === "https://registry.npmjs.org/");
 }
 

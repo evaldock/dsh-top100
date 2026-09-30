@@ -46,6 +46,8 @@ Top100 是 [EvalDock](https://www.evaldock.ai/) 旗下的插件与 Skills 发现
 
 ## 快速开始
 
+**桌面版状态：** 当前工作区正在适配 DSH Desktop 0.2.0-rc.2，尚未发布；已发布 1.3.13 的实机验收范围仍为 Web。桌面安装使用独立的 `desktop` Profile，详见[开发版桌面兼容说明](../docs/desktop-compatibility.md)。
+
 建议使用 **Node.js 24 LTS** 和 **DSH Web 0.1.5-rc.2**。本版兼容范围包含 **DSH Web 0.1.6-alpha.2**、**0.1.7-rc.1 / rc.2** 和 **0.2.0-rc.1**，无需为插件升级切换 DSH 版本。实际验证与限制见[兼容说明](https://github.com/evaldock/dsh-top100/blob/main/docs/release-1.3.13.md)。普通 npm/npx 用户请在 DSH 源码目录外，依次运行：
 
 ```sh

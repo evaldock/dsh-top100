@@ -11,7 +11,8 @@ export function readDshRuntimeVersion(entry = process.argv[1]): string | null {
   for (let depth = 0; depth < 12; depth++) {
     try {
       const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8"));
-      if (manifest.name === "@deepseek-ai/dsh" && typeof manifest.version === "string" && valid(manifest.version)) return manifest.version;
+      if (["@deepseek-ai/dsh", "@deepseek-ai/dsh-desktop-host"].includes(manifest.name)
+        && typeof manifest.version === "string" && valid(manifest.version)) return manifest.version;
     } catch { /* Try the next ancestor; unknown is preferable to guessing. */ }
     const parent = dirname(directory);
     if (parent === directory) break;

@@ -21,6 +21,16 @@ export function sameOrigin(request: IncomingMessage): boolean {
   }
 }
 
+/** Electron strips Origin and attaches its host cookie. Defer both trust and
+ * authentication to DSH; missing/disposed connection services fail closed. */
+export function authorizeDesktopRequest(ctx: { get(name: string): unknown }, request: IncomingMessage): boolean {
+  try {
+    const connection = ctx.get("connection") as { admit(request: IncomingMessage): unknown } | undefined;
+    const admission = connection?.admit(request);
+    return typeof admission === "object" && admission !== null && "peer" in admission && !("rejection" in admission);
+  } catch { return false; }
+}
+
 export async function readJsonBody(request: IncomingMessage, maxBytes = 4096): Promise<unknown> {
   const chunks: Buffer[] = [];
   let size = 0;

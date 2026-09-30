@@ -14,6 +14,8 @@ export interface WebServerService {
 
 export interface PluginHost {
   webServer: WebServerService;
+  /** Desktop forwards originless requests; only the host connection can authenticate them. */
+  authorizeRequest?: (request: IncomingMessage) => boolean;
   restartCapability?: () => import("./restart.js").RestartCapability;
   readRuntime?: (bundles: readonly RuntimeBundle[]) => Record<string, HostRuntimeStatus>;
 }
@@ -23,4 +25,6 @@ export interface PluginResolvedConfig {
   profile: string;
   /** Host-owned profile location, used by DSH Desktop instead of ~/.dsh/profiles/<name>. */
   profileDirectory?: string;
+  /** Exact running DSH manifest supplied by the Desktop launcher. */
+  installAnchor?: string;
 }

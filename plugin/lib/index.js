@@ -11,6 +11,8 @@ import { readRuntimeStatus } from "./host/runtime-status.js";
 import { mountRoutes } from "./host/routes.js";
 import { installRecommendationCapabilities } from "./host/recommendations.js";
 import { createDesktopPluginRuntime } from "./install/dsh-cli.js";
+import { createDesktopProfileRuntime } from "./host/desktop-profile.js";
+import { authorizeDesktopRequest } from "./host/http.js";
 export const name = "dsh-top100";
 export const inject = ["skills", "tools"];
 export const Config = z.object({
@@ -32,6 +34,22 @@ export function apply(ctx, config = { dataUrl: DEFAULT_DATA_URL, profile: "" }) 
     };
     ctx.inject(["webServer"], (hostCtx) => {
         const host = hostCtx;
+        const profileContext = hostCtx.get("profileContext");
+        if (profileContext?.name === "desktop") {
+            const resolved = resolvedConfig(config.dataUrl, profileContext.name, profileContext.dir);
+            resolved.installAnchor = profileContext.installAnchor;
+            installShared(resolved);
+            const runtime = createDesktopProfileRuntime(profileContext);
+            host.effect(() => {
+                const disposeRoutes = mountRoutes({ webServer: host.webServer,
+                    authorizeRequest: (request) => authorizeDesktopRequest(hostCtx, request),
+                    restartCapability: () => restartCapability({ desktop: true, currentProfile: true }),
+                    readRuntime: (bundles) => readRuntimeStatus(hostCtx, { isCurrentProfile: true, bundles }),
+                }, resolved, runtime);
+                return async () => { disposeRoutes(); await runtime.dispose?.(); };
+            }, "dsh-top100: Desktop profile routes and package operations");
+            return;
+        }
         // desktopProfiles is intentionally detected here, after host services
         // have mounted, matching DSH Desktop's published plugin contract.
         const desktopProfiles = ctx.get("desktopProfiles");

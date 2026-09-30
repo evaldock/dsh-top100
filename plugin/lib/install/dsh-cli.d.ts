@@ -18,6 +18,7 @@ export interface DesktopPnpmHandleLike {
     readonly done: Promise<{
         exitCode: number | null;
         signal: NodeJS.Signals | null;
+        timedOut?: boolean;
     }>;
     cancel(): void;
 }

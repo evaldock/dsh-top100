@@ -36,4 +36,13 @@ describe("DSH declaration compatibility", () => {
       expect(readDshRuntimeVersion(join(root, "package.json"))).toBeNull();
     } finally { rmSync(root, { recursive: true, force: true }); }
   });
+  it("reads the official Desktop host version without a CLI entry", () => {
+    const root = mkdtempSync(join(tmpdir(), "top100-desktop-version-"));
+    try {
+      mkdirSync(join(root, "lib"));
+      writeFileSync(join(root, "package.json"), JSON.stringify({ name: "@deepseek-ai/dsh-desktop-host", version: "0.2.0-rc.2" }));
+      writeFileSync(join(root, "lib", "index.js"), "");
+      expect(readDshRuntimeVersion(join(root, "lib", "index.js"))).toBe("0.2.0-rc.2");
+    } finally { rmSync(root, { recursive: true, force: true }); }
+  });
 });

@@ -88,7 +88,7 @@ export interface PluginCommandRuntime {
 export interface DesktopPnpmHandleLike {
   readonly stdout: NodeJS.ReadableStream;
   readonly stderr: NodeJS.ReadableStream;
-  readonly done: Promise<{ exitCode: number | null; signal: NodeJS.Signals | null }>;
+  readonly done: Promise<{ exitCode: number | null; signal: NodeJS.Signals | null; timedOut?: boolean }>;
   cancel(): void;
 }
 
@@ -483,6 +483,7 @@ export function createDesktopPluginRuntime(
         // A host service may synchronously trigger disposal while returning its handle.
         if (abort.signal.aborted) handle.cancel();
         const outcome = await handle.done;
+        timedOut ||= outcome.timedOut === true;
         const exitCode = outcome.exitCode;
         if (exitCode !== 0 || timedOut) progress.error = stderr.slice(-200) || `exit ${exitCode}`;
         return { exitCode, timedOut, stdout, stderr, cancelled: operation.cancelled };

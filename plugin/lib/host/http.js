@@ -18,6 +18,18 @@ export function sameOrigin(request) {
         return false;
     }
 }
+/** Electron strips Origin and attaches its host cookie. Defer both trust and
+ * authentication to DSH; missing/disposed connection services fail closed. */
+export function authorizeDesktopRequest(ctx, request) {
+    try {
+        const connection = ctx.get("connection");
+        const admission = connection?.admit(request);
+        return typeof admission === "object" && admission !== null && "peer" in admission && !("rejection" in admission);
+    }
+    catch {
+        return false;
+    }
+}
 export async function readJsonBody(request, maxBytes = 4096) {
     const chunks = [];
     let size = 0;

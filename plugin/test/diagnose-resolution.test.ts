@@ -49,6 +49,16 @@ function fixture() {
 }
 
 describe("diagnostic host package lookup", () => {
+  it("resolves Desktop core packages from the supplied runtime anchor without a CLI argv", async () => {
+    const { profile, host, hostModules } = fixture();
+    process.argv = [originalArgv[0], "/Application/desktop-host/lib/index.js"];
+    packageAt(join(hostModules, "@deepseek-ai/dsh-base"), "@deepseek-ai/dsh-base", "1.3.0");
+    packageAt(join(hostModules, "@deepseek-ai/dsh-settings"), "@deepseek-ai/dsh-settings", "1.3.0");
+    const report = await buildDiagnosticReport("desktop", { profileDir: profile, installAnchor: join(host, "package.json"), document, now: Date.parse(document.generatedAt) });
+    expect(report.bundles.find(bundle => bundle.name === "@deepseek-ai/dsh-base")?.version).toBe("1.3.0");
+    expect(report.peers[0]?.resolved).toBe("1.3.0");
+    expect(report.findings.some(finding => finding.code === "bundle-unresolved" || finding.code === "peer-missing")).toBe(false);
+  });
   it.each(["0.5.0", "0.6.0"])("binds compact catalog recognition to the recorded npm version (installed %s)", async (version) => {
     const { profile } = fixture();
     const name = "@acme/theme", fullName = "acme/theme-repo";

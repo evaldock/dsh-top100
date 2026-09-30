@@ -47,12 +47,12 @@ function routeHarness() {
       return () => { routes.delete(route.path); };
     },
   };
-  const request = async (path: string, options: { method?: string; body?: unknown; loseResponse?: boolean } = {}) => {
+  const request = async (path: string, options: { method?: string; body?: unknown; loseResponse?: boolean; headers?: Record<string, string> } = {}) => {
     const stream = Readable.from(options.body === undefined ? [] : [Buffer.from(JSON.stringify(options.body))]);
     Object.assign(stream, {
       method: options.method ?? "GET",
       url: path,
-      headers: { host: "127.0.0.1:3080", origin: "http://127.0.0.1:3080" },
+      headers: options.headers ?? { host: "127.0.0.1:3080", origin: "http://127.0.0.1:3080" },
     });
     let status = 0;
     let output = "";
@@ -71,6 +71,28 @@ function routeHarness() {
 function ok(): InstallResult {
   return { exitCode: 0, timedOut: false, stdout: "", stderr: "", cancelled: false };
 }
+
+it("requires Desktop host admission for reads and writes, including same-origin requests", async () => {
+  const harness = routeHarness();
+  const directory = profileFixture("desktop-auth");
+  let allowed = false;
+  mountRoutes({ ...harness, authorizeRequest: () => allowed }, { dataUrl: "https://example.invalid", profile: "desktop", profileDirectory: directory });
+  const path = join(directory, "cordis.patch.yml");
+  const before = readFileSync(path, "utf8");
+  expect((await harness.request("/dsh-top100/status")).status).toBe(403);
+  expect((await harness.request("/dsh-top100/toggle", { method: "POST", body: { name: "demo", enabled: true } })).status).toBe(403);
+  expect(readFileSync(path, "utf8")).toBe(before);
+  allowed = true;
+  const headers = { host: "127.0.0.1:3080" }; // Electron strips Origin after validating its own page.
+  expect((await harness.request("/dsh-top100/status", { headers })).status).toBe(200);
+  expect((await harness.request("/dsh-top100/toggle", { headers, method: "POST", body: { name: "demo", enabled: true } })).status).toBe(200);
+});
+
+it("continues rejecting originless Web mutations without Desktop admission", async () => {
+  const harness = routeHarness();
+  mountRoutes(harness, { dataUrl: "https://example.invalid", profile: "web", profileDirectory: profileFixture("web-origin") });
+  expect((await harness.request("/dsh-top100/toggle", { headers: { host: "127.0.0.1:3080" }, method: "POST", body: { name: "demo", enabled: true } })).status).toBe(403);
+});
 
 function profileFixture(name: string): string {
   const directory = mkdtempSync(join(tmpdir(), `dsh-top100-${name}-`));

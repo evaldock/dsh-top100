@@ -23,7 +23,9 @@ export declare function normalizeInstallTarget(value: unknown): string | null;
 /** A # inside a ref or a quoted token is not a shell comment. */
 export declare function stripInstallComment(command: string): string;
 export declare function parseDshInstallCommandDetails(value: unknown): DshInstallCommandDetails | null;
-/** Public npm is supported; an explicit author Profile must match the requested destination. */
+/** Desktop hosts the Web UI too. Treat an author's standard Web destination as
+ * portable to Desktop; callers still execute against their actual Profile.
+ * Custom Profile requirements and non-public registries remain restricted. */
 export declare function isDshInstallCommandCompatible(command: DshInstallCommandDetails, options?: {
     profile?: string;
 }): boolean;

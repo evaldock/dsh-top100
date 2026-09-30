@@ -433,6 +433,7 @@ export function createDesktopPluginRuntime(service, activeProfileDir, invokingDi
                 if (abort.signal.aborted)
                     handle.cancel();
                 const outcome = await handle.done;
+                timedOut ||= outcome.timedOut === true;
                 const exitCode = outcome.exitCode;
                 if (exitCode !== 0 || timedOut)
                     progress.error = stderr.slice(-200) || `exit ${exitCode}`;
