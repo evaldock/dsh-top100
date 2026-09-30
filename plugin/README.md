@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://www.evaldock.ai/top100/"><img alt="在线体验" src="https://img.shields.io/badge/在线体验-Visit-5865f2?style=flat-square"></a>
-  <a href="https://github.com/evaldock/dsh-top100/releases/tag/v1.3.13"><img alt="正式版本 v1.3.13" src="https://img.shields.io/badge/release-v1.3.13-2f6f68?style=flat-square"></a>
+  <a href="https://github.com/evaldock/dsh-top100/releases/tag/v1.3.14"><img alt="正式版本 v1.3.14" src="https://img.shields.io/badge/release-v1.3.14-2f6f68?style=flat-square"></a>
   <a href="https://www.npmjs.com/package/@evaldock/dsh-top100-plugin"><img alt="npm latest" src="https://img.shields.io/npm/v/%40evaldock%2Fdsh-top100-plugin?style=flat-square&label=npm&color=cb3837"></a>
   <a href="https://www.evaldock.ai/top100/?page=dsh#dsh"><img alt="安装 dsh-top100" src="https://img.shields.io/badge/安装指南-接入_DSH-f2b84b?style=flat-square"></a>
   <a href="https://github.com/evaldock/dsh-top100/blob/main/CONTRIBUTING.md"><img alt="参与贡献" src="https://img.shields.io/badge/Contribute-参与贡献-555?style=flat-square&logo=github"></a>
@@ -46,12 +46,12 @@ Top100 是 [EvalDock](https://www.evaldock.ai/) 旗下的插件与 Skills 发现
 
 ## 快速开始
 
-**桌面版状态：** 当前工作区正在适配 DSH Desktop 0.2.0-rc.2，尚未发布；已发布 1.3.13 的实机验收范围仍为 Web。桌面安装使用独立的 `desktop` Profile，详见[开发版桌面兼容说明](../docs/desktop-compatibility.md)。
+**桌面版：** 1.3.14 增加 DSH Desktop 0.2.0-rc.2 支持，已在 macOS ARM64 验证。请先打开桌面应用初始化环境，再从菜单“管理 dsh 命令”安装官方命令，完全退出桌面应用后运行 `dsh plugin --profile desktop add @evaldock/dsh-top100-plugin@1.3.14`，完成后重新打开。桌面与 Web 使用独立 Profile，详见[桌面兼容说明](https://github.com/evaldock/dsh-top100/blob/main/docs/desktop-compatibility.md)。
 
-建议使用 **Node.js 24 LTS** 和 **DSH Web 0.1.5-rc.2**。本版兼容范围包含 **DSH Web 0.1.6-alpha.2**、**0.1.7-rc.1 / rc.2** 和 **0.2.0-rc.1**，无需为插件升级切换 DSH 版本。实际验证与限制见[兼容说明](https://github.com/evaldock/dsh-top100/blob/main/docs/release-1.3.13.md)。普通 npm/npx 用户请在 DSH 源码目录外，依次运行：
+建议使用 **Node.js 24 LTS** 和 **DSH Web 0.1.5-rc.2**。本版兼容范围包含 **DSH Web 0.1.6-alpha.2**、**0.1.7-rc.1 / rc.2** 和 **0.2.0-rc.1**，无需为插件升级切换 DSH 版本。实际验证与限制见[兼容说明](https://github.com/evaldock/dsh-top100/blob/main/docs/release-1.3.14.md)。普通 npm/npx 用户请在 DSH 源码目录外，依次运行：
 
 ```sh
-npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web add @evaldock/dsh-top100-plugin@1.3.13
+npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web add @evaldock/dsh-top100-plugin@1.3.14
 npx @deepseek-ai/dsh@0.1.5-rc.2 web
 ```
 
@@ -62,7 +62,7 @@ npx @deepseek-ai/dsh@0.1.5-rc.2 web
 
 ```yaml
 minimumReleaseAgeExclude:
-  - '@evaldock/dsh-top100-plugin@1.3.13'
+  - '@evaldock/dsh-top100-plugin@1.3.14'
 ```
 
 默认文件位于用户主目录下的 `.dsh/profiles/web/pnpm-workspace.yaml`；设置了 `DSH_HOME` 时使用该目录下的 `profiles/web/pnpm-workspace.yaml`。首次安装命令会准备 Profile；尚未创建 Profile 时，可先运行 `npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web list`。若 Profile 已存在但缺少 `pnpm-workspace.yaml`，请在该 Profile 目录中创建此文件，再加入上述配置。全局或源码用户需沿用各自的命令前缀。
@@ -70,7 +70,7 @@ minimumReleaseAgeExclude:
 保存后，用同一种方式重新安装：
 
 ```sh
-npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web add -w @evaldock/dsh-top100-plugin@1.3.13
+npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web add -w @evaldock/dsh-top100-plugin@1.3.14
 ```
 
 该例外只放行这个版本，其他依赖仍遵守原等待期；如果报错指向其他包，应单独核对该包。后续升级须使用新版安装指引，不要沿用旧版本例外。
@@ -83,7 +83,7 @@ npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web add -w @evaldock/dsh-top100
 
 ```sh
 npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web remove @dsheval/dsh-top100-plugin
-npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web add @evaldock/dsh-top100-plugin@1.3.13
+npx @deepseek-ai/dsh@0.1.5-rc.2 plugin --profile web add @evaldock/dsh-top100-plugin@1.3.14
 npx @deepseek-ai/dsh@0.1.5-rc.2 web
 ```
 
@@ -173,7 +173,7 @@ pnpm 是依赖管理和命令运行工具。首次安装会下载整个源码工
 **首次安装或升级 Top100：**依赖和构建准备成功后执行（不是每次启动都要执行）。
 
 ```sh
-pnpm dsh plugin --profile web add @evaldock/dsh-top100-plugin@1.3.13
+pnpm dsh plugin --profile web add @evaldock/dsh-top100-plugin@1.3.14
 ```
 
 **日常启动：**保持终端运行，在浏览器打开终端输出的 Web 地址；结束使用时按 `Ctrl+C` 停止。
@@ -190,7 +190,7 @@ pnpm dsh web
 如果 `dsh --version` 可以正常返回，也可以直接使用：
 
 ```sh
-dsh plugin --profile web add @evaldock/dsh-top100-plugin@1.3.13
+dsh plugin --profile web add @evaldock/dsh-top100-plugin@1.3.14
 dsh web
 ```
 

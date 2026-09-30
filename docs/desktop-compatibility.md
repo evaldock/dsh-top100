@@ -1,6 +1,6 @@
-# DSH Desktop 兼容说明（本地适配完成，尚未发布）
+# DSH Desktop 兼容说明（1.3.14）
 
-当前工作区增加 DSH Desktop 0.2.0-rc.2 适配。npm 已发布的 Top100 1.3.13 只完成 Web 实机验收，不能把本页作为其桌面兼容承诺。
+Top100 1.3.14 增加 DSH Desktop 0.2.0-rc.2 适配，实机范围为 macOS ARM64。旧版 1.3.13 只完成 Web 实机验收；请使用 1.3.14 获取桌面支持。
 
 ## 适配行为
 
@@ -12,17 +12,17 @@
 - 安装确认能识别桌面宿主的 DSH 版本；诊断从宿主实际安装位置查找官方依赖。
 - 保留现有 Web 和旧桌面接口。桌面需要重启时提示退出并重新打开应用，不通过 Web 的进程接管按钮重启 Electron。
 
-## 本地验收包的安装
+## 桌面安装
 
-先打开 DSH Desktop 一次以初始化环境，随后完全退出。在桌面菜单的“管理 dsh 命令”中安装官方命令后，使用该命令将验收包安装到桌面 Profile：
+先打开 DSH Desktop 一次以初始化环境，随后完全退出。在桌面菜单的“管理 dsh 命令”中安装官方命令后，使用该命令将插件安装到桌面 Profile：
 
 ```sh
-dsh plugin --profile desktop add /absolute/path/to/verified-top100-package.tgz
+dsh plugin --profile desktop add @evaldock/dsh-top100-plugin@1.3.14
 ```
 
-将路径替换为实际验收包，再重新打开桌面应用。安装到 `--profile web` 的插件不会自动成为桌面插件。不要手动搬动 Web Profile、覆盖补丁或复制模型密钥。
+安装完成后重新打开桌面应用。安装到 `--profile web` 的插件不会自动成为桌面插件。不要手动搬动 Web Profile、覆盖补丁或复制模型密钥。
 
-新版本尚未发布，请勿直接将 `npm latest` 视为本页所述候选版。正式版本号、可用平台与实机验证范围以发布说明为准。
+正式版本与验证范围见 [1.3.14 发布说明](./release-1.3.14.md)。
 
 ## 验收范围
 
