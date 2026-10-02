@@ -236,7 +236,7 @@
     "sourceDescription": "Let AI agents use your real, logged-in browser without interrupting your work. CLI + extension for browser automation across any shell-capable AI agent.",
     "sourceReadme": "Use BrowserSkill in DeepSeek Harness (dsh) to browse websites, fill forms, and capture screenshots through native browser_ tools. Browser tasks run in Agent Windows, with a live view in the dsh Web UI. Before installing the plugin: - Install DeepSeek Harness and pnpm, which dsh uses to manage plugins. - Install the bsk CLI and connect the BrowserSkill extension in Chrome or Edge. Follow the BrowserSkill setup guide.…",
     "sourceUrl": "https://github.com/Tencent/BrowserSkill",
-    "reviewedAt": "2026-09-24",
+    "reviewedAt": "2026-10-02",
     "leaderboards": [
       "hot",
       "rising",
@@ -272,7 +272,8 @@
     },
     "sourceDocumentHashes": [
       "80b39390c3cbf7de3e608c7a9778cde67dd885551f3ec7d739b49aa956842650",
-      "d60c24bc56709aff26942ee165edae030912fa9e50fecd67150e634c30a6f03e"
+      "d60c24bc56709aff26942ee165edae030912fa9e50fecd67150e634c30a6f03e",
+      "8b1d28a746a347d30ab1bf526b115c6cb7db3ea688d89ee75e2b245d50131125"
     ],
     "sourceScope": "selected-package",
     "sourceEvidenceRevision": "f60d8daa80692e18a62a4dc986afe13090ff9fb6",
@@ -281,6 +282,17 @@
       {
         "sourceDescription": "Let AI agents use your real, logged-in browser without interrupting your work. CLI + extension for browser automation across any shell-capable AI agent.",
         "sourceReadme": "Use BrowserSkill in DeepSeek Harness (dsh) to browse websites, fill forms, and capture screenshots through native browser_ tools. Browser tasks run in Agent Windows, with a live view in the dsh Web UI. Before installing the plugin: - Install DeepSeek Harness and pnpm, which dsh uses to manage plugins. - Install the bsk CLI and connect the BrowserSkill extension in Chrome or Edge. Follow the BrowserSkill setup guide.…"
+      }
+    ],
+    "sourceRefreshReviews": [
+      {
+        "reviewedAt": "2026-10-02",
+        "previousReviewedAt": "2026-09-24",
+        "sourceRevision": "3f10983c09fcd443c7420830ab984c9d409954bf",
+        "documentSha256": "8b1d28a746a347d30ab1bf526b115c6cb7db3ea688d89ee75e2b245d50131125",
+        "packageSha256": "00507031afc22cf357c677b001d45accd78f8e523a53e0f0a0c758feedcacbf6",
+        "reviewMethod": "Codex full pinned-document diff and selected package identity review; no installation or runtime validation",
+        "reviewReason": "完整差异新增会话回收恢复、兼容范围和技能加载说明；子包文档仍明确支持浏览、填表、截图和实时视图，bsk及扩展前置条件未撤销。"
       }
     ]
   },
@@ -1072,7 +1084,7 @@
     "sourceDescription": "简历包装",
     "sourceReadme": "中文求职工作流插件 用九个独立入口完成开源贡献、证据复盘、项目导学面经、简历提升、简历制作、岗位匹配、简历投递填写、面试准备和校招进度管理。 - 安装 - 第一次使用：从哪个入口开始 - 九个 Skill - /contributor：做真实的开源贡献 - /project-guide：项目导学面经 - /great-resume：简历提升 - /make-resume：制作简历 - /evidence-recap：把 AI 编程对话还原成证据链 - /interview：把简历问穿 - /offer：校招进度管理 - /job-match：岗位匹配分析 - /job-apply：简历投递填写 - 九个入口如何配合 - 事实边界 - 文件结构 - 参与贡献 - 特别感谢 - 致谢 - Contributors - 开源协议 - Star History ASu-skills 现在是一个插件包。安装后会提供九个可单独调用的入口：…",
     "sourceUrl": "https://github.com/Hisn00w/ASu-skills",
-    "reviewedAt": "2026-09-24",
+    "reviewedAt": "2026-10-02",
     "leaderboards": [
       "hot",
       "total"
@@ -1107,7 +1119,8 @@
     },
     "sourceDocumentHashes": [
       "a392f9c6433e0c00402d423a144b9a6912dc0703129fac055c63800ae03e1c7d",
-      "6d3878b287e02cdaa9108023b7720eac614cae7d6965a6f98d6fc66f056a9b0d"
+      "6d3878b287e02cdaa9108023b7720eac614cae7d6965a6f98d6fc66f056a9b0d",
+      "740159298bb4990e8d9e498d8d90ad105a507566d61469ce9a49a335c876a34e"
     ],
     "sourceEvidenceRevision": "f7078acb98c69925650117fa30099aef4df0a49f",
     "reviewReason": "当前插件包九个技能入口逐项覆盖旧文所列项目导学、简历、岗位匹配、面试、投递跟踪、开源贡献和证据复盘；未把自动填写误写为自动提交。",
@@ -1115,6 +1128,17 @@
       {
         "sourceDescription": "简历包装",
         "sourceReadme": "中文求职工作流插件 用九个独立入口完成开源贡献、证据复盘、项目导学面经、简历提升、简历制作、岗位匹配、简历投递填写、面试准备和校招进度管理。 - 安装 - 第一次使用：从哪个入口开始 - 九个 Skill - /contributor：做真实的开源贡献 - /project-guide：项目导学面经 - /great-resume：简历提升 - /make-resume：制作简历 - /evidence-recap：把 AI 编程对话还原成证据链 - /interview：把简历问穿 - /offer：校招进度管理 - /job-match：岗位匹配分析 - /job-apply：简历投递填写 - 九个入口如何配合 - 事实边界 - 文件结构 - 参与贡献 - 特别感谢 - 致谢 - Contributors - 开源协议 - Star History ASu-skills 现在是一个插件包。安装后会提供九个可单独调用的入口：…"
+      }
+    ],
+    "sourceRefreshReviews": [
+      {
+        "reviewedAt": "2026-10-02",
+        "previousReviewedAt": "2026-09-24",
+        "sourceRevision": "cb9f3080897c24305b2a888d6c363367aed53563",
+        "documentSha256": "740159298bb4990e8d9e498d8d90ad105a507566d61469ce9a49a335c876a34e",
+        "packageSha256": "3f97ad14125d544069a4d8f75cf8c233f34679077e0722cc620878e75088c7e2",
+        "reviewMethod": "Codex full pinned-document diff and selected package identity review; no installation or runtime validation",
+        "reviewReason": "完整差异新增可选LaTeX简历输出、Cursor桥接和导出文档；原求职、项目学习、简历、岗位、面试、投递跟踪与贡献复盘功能仍在。"
       }
     ]
   },
@@ -1526,7 +1550,7 @@
     "sourceDescription": "Vision plugin for text-only LLMs: paste images for recognition, multi-image Q&A, screenshot capture, and visual task completion with one-line install.",
     "sourceReadme": "ModLens Give a text-only model sight, and just paste the image. 🥇 The most capable vision plugin for DeepSeek Harness (dsh) 🥇 简体中文 · Configuration · Troubleshooting · Security · 🔍 ModSearch (the best free web search plugin for DSH) DeepSeek's flagship chat models, and GLM-5.3 itself, are text-only and cannot read images. GLM-5.3-Flash is native multimodal.…",
     "sourceUrl": "https://github.com/liustack/modlens",
-    "reviewedAt": "2026-09-24",
+    "reviewedAt": "2026-10-02",
     "leaderboards": [
       "hot",
       "rising",
@@ -1562,7 +1586,8 @@
     },
     "sourceDocumentHashes": [
       "bf642437a2fd4c214c2bb3620f9d649938f02e8945e0d06bb52de614ccda68bf",
-      "69bfa9e9225b45d4560bf5213be765c4a29ac86bfce937c9a59ae4241b553058"
+      "69bfa9e9225b45d4560bf5213be765c4a29ac86bfce937c9a59ae4241b553058",
+      "72e4ea1b624953508483fb4eac9251b8b513ace270288b7afe6e525c52b5a1b6"
     ],
     "sourceEvidenceRevision": "9b67ba437dd12e5bcff8f639d6ddd7baa3498d91",
     "reviewReason": "图像经视觉引擎转换为证据、DSH 工具及复用已登录 CLI/API 配置均有支持。旧文保留前置条件，未继承 README 的免费、最强或性能营销承诺。",
@@ -1570,6 +1595,17 @@
       {
         "sourceDescription": "Vision plugin for text-only LLMs: paste images for recognition, multi-image Q&A, screenshot capture, and visual task completion with one-line install.",
         "sourceReadme": "ModLens Give a text-only model sight, and just paste the image. 🥇 The most capable vision plugin for DeepSeek Harness (dsh) 🥇 简体中文 · Configuration · Troubleshooting · Security · 🔍 ModSearch (the best free web search plugin for DSH) DeepSeek's flagship chat models, and GLM-5.3 itself, are text-only and cannot read images. GLM-5.3-Flash is native multimodal.…"
+      }
+    ],
+    "sourceRefreshReviews": [
+      {
+        "reviewedAt": "2026-10-02",
+        "previousReviewedAt": "2026-09-24",
+        "sourceRevision": "333468c72bf9630ec5dd60b169b89e1f48f39b53",
+        "documentSha256": "72e4ea1b624953508483fb4eac9251b8b513ace270288b7afe6e525c52b5a1b6",
+        "packageSha256": "4bdc6850e56984154c53b917d3692b6e154caa887723477a9055faf9b650ee9a",
+        "reviewMethod": "Codex full pinned-document diff and selected package identity review; no installation or runtime validation",
+        "reviewReason": "完整差异仅更新安装版本和设置卡片入口；图像转视觉证据及经授权复用CLI的功能说明不变。"
       }
     ]
   },
@@ -1680,7 +1716,7 @@
     "sourceDescription": "DSH Agency Agents — 为 DeepSeek Harness 提供 321 名可召唤的专业智能体 · 321 summonable domain experts for DeepSeek Harness",
     "sourceReadme": "321 specialists · 5 built-in teams · Custom collaboration 简体中文 · Expert roster · Installation · Changelog · Release notes · Apache-2.0 > DSH Agency Agents is a community-maintained DeepSeek Harness (DSH) plugin, not an official DeepSeek AI product. Choose a specialist in DSH for code review, design, operations, or research. All 321 experts are bundled and ready to use after installation. - Find the right expert:…",
     "sourceUrl": "https://github.com/MichengAI/dsh-agency-agents",
-    "reviewedAt": "2026-09-24",
+    "reviewedAt": "2026-10-02",
     "leaderboards": [
       "hot",
       "rising"
@@ -1711,16 +1747,28 @@
     "reviewBatch": "description-review-20260924",
     "sourceEvidenceRevision": "f5b5b53b29c8a5ebd5ed8d528e43f658dba7f513",
     "sourceDocumentHashes": [
-      "572e6b9b2a1642fcd4f92f174efff56c1e1105af80c5b562dea26da325cecca0"
+      "572e6b9b2a1642fcd4f92f174efff56c1e1105af80c5b562dea26da325cecca0",
+      "e05dc27f9be2d4a09231ae681fa00b830f625e29da9fd5b228200fa6ab7efd9b"
     ],
-    "reviewReason": "保留文档明确的领域专家、任务委派和父会话汇总；省略没有必要在简介中承诺的实现方式。"
+    "reviewReason": "保留文档明确的领域专家、任务委派和父会话汇总；省略没有必要在简介中承诺的实现方式。",
+    "sourceRefreshReviews": [
+      {
+        "reviewedAt": "2026-10-02",
+        "previousReviewedAt": "2026-09-24",
+        "sourceRevision": "8a422790cc9d7960f5ac89a5606ffb436fb66eee",
+        "documentSha256": "e05dc27f9be2d4a09231ae681fa00b830f625e29da9fd5b228200fa6ab7efd9b",
+        "packageSha256": "ed1b6eac2636fca119fcf9664956c58fe7e8edc16f80efe0c8b4bd6a79996648",
+        "reviewMethod": "Codex full pinned-document diff and selected package identity review; no installation or runtime validation",
+        "reviewReason": "完整差异更新发布版本和宿主支持范围；按领域选择专家、单个/并发委派与主会话汇总功能未变。"
+      }
+    ]
   },
   "liustack/modsearch": {
     "descriptionZh": "为 DSH 提供网页搜索与页面读取，返回带来源的资料；X 搜索另需安装并登录 Grok Build。",
     "sourceDescription": "🥇 The strongest free web search plugin for DeepSeek Harness, and the search bridge for every model without native web access. Free, no signup, no API key. Ask the web or X, get structured JSON evidence. | 🥇 全网最强的 DeepSeek Harness 免费联网搜索插件，免费免注册免 API key。为不能联网的模型补上搜索，问网页或 X，拿回结构化 JSON 证据（搜索、抓取、引用）。",
     "sourceReadme": "ModSearch In the chat app your model can search the web. On the API it cannot. ModSearch puts the web back: web search, X search, page fetch. Free, no signup, no API key. 🥇 The strongest free web search plugin for DeepSeek Harness (dsh) 🥇 Engines:…",
     "sourceUrl": "https://github.com/liustack/modsearch",
-    "reviewedAt": "2026-09-24",
+    "reviewedAt": "2026-10-02",
     "leaderboards": [
       "hot",
       "rising",
@@ -1756,7 +1804,8 @@
     },
     "sourceDocumentHashes": [
       "86f49eb0f14e1200d775ea50e231c95ba33c1917db59fa3550bf1c1e71202fd0",
-      "28688924dd9d515d41a77fdaf649143c55d1da9dfebb69b491af3a8e6f768fea"
+      "28688924dd9d515d41a77fdaf649143c55d1da9dfebb69b491af3a8e6f768fea",
+      "e25c5a4efdb6da5c87ccb5c3b92c39d5dc1ff4bd1b8959bcea93caab710d9778"
     ],
     "sourceEvidenceRevision": "52437bf92c35f917274d83288f8780bb87ce98f0",
     "reviewReason": "网页搜索、页面读取、来源结果和需安装登录 Grok Build 的 X 搜索均在当前说明中；旧文不依赖容易变化的默认引擎或免费额度数值。",
@@ -1764,6 +1813,17 @@
       {
         "sourceDescription": "🥇 The strongest free web search plugin for DeepSeek Harness, and the search bridge for every model without native web access. Free, no signup, no API key. Ask the web or X, get structured JSON evidence. | 🥇 全网最强的 DeepSeek Harness 免费联网搜索插件，免费免注册免 API key。为不能联网的模型补上搜索，问网页或 X，拿回结构化 JSON 证据（搜索、抓取、引用）。",
         "sourceReadme": "ModSearch In the chat app your model can search the web. On the API it cannot. ModSearch puts the web back: web search, X search, page fetch. Free, no signup, no API key. 🥇 The strongest free web search plugin for DeepSeek Harness (dsh) 🥇 Engines:…"
+      }
+    ],
+    "sourceRefreshReviews": [
+      {
+        "reviewedAt": "2026-10-02",
+        "previousReviewedAt": "2026-09-24",
+        "sourceRevision": "4529da69abab0abfdb24774c5126aa3b1ba4ba21",
+        "documentSha256": "e25c5a4efdb6da5c87ccb5c3b92c39d5dc1ff4bd1b8959bcea93caab710d9778",
+        "packageSha256": "d2a190105d93e9b32845d8663b2674a168d599edc7b9a9afbc19a33e7eab3a4a",
+        "reviewMethod": "Codex full pinned-document diff and selected package identity review; no installation or runtime validation",
+        "reviewReason": "完整差异仅更新安装版本、设置入口和截图；网页搜索/读取与Grok Build的X搜索前置仍在。"
       }
     ]
   },
@@ -3244,7 +3304,7 @@
     "sourceDescription": "LLM-supervised persistent memory for AI agents — graph-based recall, cross-session knowledge, single binary. Works with DeepSeek Harness, Claude Code, OpenClaw, and any agent runtime.",
     "sourceReadme": "Mnemon English · 中文 LLM-supervised persistent memory for AI agents. --- LLM agents forget everything between sessions. Context compaction drops critical decisions, cross-session knowledge vanishes, and long conversations push early information out of the window.…",
     "sourceUrl": "https://github.com/mnemon-dev/mnemon",
-    "reviewedAt": "2026-09-16",
+    "reviewedAt": "2026-10-02",
     "leaderboards": [
       "rising",
       "total"
@@ -3283,7 +3343,19 @@
       "packageSha256": "47cc0f65ba275692419fc23b957f96cc508ebea1f1cc53d31768bb0f725af374"
     },
     "sourceDocumentHashes": [
-      "7b34e11301c476c7b48b36d8d9866f84ab75dc365674b33843e3b9ba15dd68c8"
+      "7b34e11301c476c7b48b36d8d9866f84ab75dc365674b33843e3b9ba15dd68c8",
+      "d7e28727e9ad20bcd851ab81e8b9e283492717c09f39cb3596a8f7142c13a13e"
+    ],
+    "sourceRefreshReviews": [
+      {
+        "reviewedAt": "2026-10-02",
+        "previousReviewedAt": "2026-09-16",
+        "sourceRevision": "4d312c4ebb42bf9f85442120fad4b9e85d4779e2",
+        "documentSha256": "d7e28727e9ad20bcd851ab81e8b9e283492717c09f39cb3596a8f7142c13a13e",
+        "packageSha256": "47cc0f65ba275692419fc23b957f96cc508ebea1f1cc53d31768bb0f725af374",
+        "reviewMethod": "Codex full pinned-document diff and selected package identity review; no installation or runtime validation",
+        "reviewReason": "完整差异仅增加实验性Memory Agent文档链接；原DSH记忆集成与本机Mnemon命令行前置仍在，不将实验能力套入简介。"
+      }
     ]
   },
   "thebiggavin/marketingdashboard": {
@@ -14902,14 +14974,15 @@
       "repositoryPath": null
     },
     "enforceSourceMatch": true,
-    "reviewedAt": "2026-09-24",
+    "reviewedAt": "2026-10-02",
     "reviewMethod": "Codex targeted author-source review; no runtime verification or model API calls",
     "reviewBatch": "description-review-20260924",
     "sourceUrl": "https://github.com/rsi-gear/gear",
     "sourceEvidenceRevision": "2291dd8ae763790800f6ab5b72e19680ea0e4ed3",
     "sourceEvidenceCommit": "2291dd8ae763790800f6ab5b72e19680ea0e4ed3",
     "sourceDocumentHashes": [
-      "7e681295a273a5efeb68029509f960d24687acb7c175a472514057882c8f676e"
+      "7e681295a273a5efeb68029509f960d24687acb7c175a472514057882c8f676e",
+      "69369cc711474d823e5b48c7f8e89ed46d722189d6cd8bb98abc4a27973afa2d"
     ],
     "sourceEvidence": [
       {
@@ -14923,7 +14996,18 @@
         "sha256": "c39086674142e38018880f9e48d5bcbd08731a941943addfff8ac7101d0d3caa"
       }
     ],
-    "reviewReason": "当前Gear README的代表性任务基准、成功标准和Refine Skill优化流程与旧文吻合；本次Codex来源审核，不伪造原模型生成日期。"
+    "reviewReason": "当前Gear README的代表性任务基准、成功标准和Refine Skill优化流程与旧文吻合；本次Codex来源审核，不伪造原模型生成日期。",
+    "sourceRefreshReviews": [
+      {
+        "reviewedAt": "2026-10-02",
+        "previousReviewedAt": "2026-09-24",
+        "sourceRevision": "0fc8acb778f4504ec87b50780fdb2b8b8b0d0488",
+        "documentSha256": "69369cc711474d823e5b48c7f8e89ed46d722189d6cd8bb98abc4a27973afa2d",
+        "packageSha256": "ebb042ab3a90939eb3ed2e47068ae6714b5bbf59e27307a2181b22a9de4a8bef",
+        "reviewMethod": "Codex full pinned-document diff and selected package identity review; no installation or runtime validation",
+        "reviewReason": "完整差异仅增加加权目标文档链接；代表性任务基准、成功标准与Refine Skill仍明确保留。"
+      }
+    ]
   },
   "ranxianglei/billion-context": {
     "descriptionZh": "面向 AI 编程代理的通用上下文压缩代理，通过设置 base URL 即可接入，无需为每个代理编写适配代码，并采用免训练的多代分层压缩管理长期上下文。",
