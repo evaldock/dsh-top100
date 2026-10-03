@@ -3780,11 +3780,13 @@
           );
         }
 
-        if (scroll || window.location.hash === `#${currentContentView}`) {
+        const targetHash = window.location.hash;
+        if (scroll || targetHash === `#${currentContentView}` || targetHash.startsWith(`#${currentContentView}-`)) {
           void contentPromise.then(() => {
             if (currentContentView !== requestedContentView) return;
             window.requestAnimationFrame(() => {
-              document.querySelector("#ranking").scrollIntoView({
+              const target = document.getElementById(targetHash.slice(1)) ?? document.querySelector("#ranking");
+              target.scrollIntoView({
                 behavior: scroll && !reduceMotion ? "smooth" : "auto",
                 block: "start",
               });
@@ -4766,11 +4768,16 @@
           });
         }
         for (const button of categoryButtons) {
-          button.addEventListener("mouseenter", () => showCategoryDescription(button));
+          button.addEventListener("pointerenter", event => {
+            if (event.pointerType === "mouse") showCategoryDescription(button);
+          });
           button.addEventListener("mouseleave", hideCategoryDescription);
-          button.addEventListener("focus", () => showCategoryDescription(button));
+          button.addEventListener("focus", () => {
+            if (button.matches(":focus-visible")) showCategoryDescription(button);
+          });
           button.addEventListener("blur", hideCategoryDescription);
           button.addEventListener("click", () => {
+            hideCategoryDescription();
             activeCategory = button.dataset.category || null;
             categoryEntries = [];
             categoryPageLoaded = 0;

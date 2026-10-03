@@ -239,7 +239,7 @@ test("keeps discovery views ordered and uses one persistent ranking search", () 
 test("serves local assets with same-origin production ranking data", () => {
   assert.equal(packageJson.scripts.serve, "node scripts/serve-dev.mjs");
   assert.match(devServer, /requestUrl\.pathname\.startsWith\("\/data\/"\)/);
-  assert.match(devServer, /https:\/\/www\.dsheval\.ai/);
+  assert.match(devServer, /https:\/\/www\.evaldock\.ai/);
   assert.match(devServer, /requestUrl\.pathname === "\/api\/events"/);
 });
 

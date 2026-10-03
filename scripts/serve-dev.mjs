@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 const projectRoot = join(fileURLToPath(new URL("..", import.meta.url)));
 const publicRoot = join(projectRoot, "web/public");
 const port = Number(process.env.WEB_PORT ?? "4173");
-const dataOrigin = new URL(process.env.DSH_DATA_ORIGIN ?? "https://www.dsheval.ai");
+const dataOrigin = new URL(process.env.DSH_DATA_ORIGIN ?? "https://www.evaldock.ai");
 const localDataRoot = process.env.DSH_LOCAL_DATA_DIR ? resolve(process.env.DSH_LOCAL_DATA_DIR) : null;
 if (localDataRoot && !existsSync(join(localDataRoot, "manifest.json"))) {
   throw new Error("DSH_LOCAL_DATA_DIR must contain a published manifest.json");

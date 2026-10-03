@@ -1,6 +1,16 @@
 // Match EvalDock's navigation interactions without requiring its React runtime.
 const dropdowns = document.querySelectorAll('.dsh-nav-root');
 
+// The standalone preview only serves Top100; main-site links keep their real destination.
+if (['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname)) {
+  for (const link of document.querySelectorAll('a[href^="/"]')) {
+    const href = link.getAttribute('href');
+    if (!href.startsWith('/top100/') && !href.startsWith('//')) {
+      link.href = `https://www.evaldock.ai${href}`;
+    }
+  }
+}
+
 for (const root of dropdowns) {
   const toggle = root.querySelector('.dsh-nav-toggle');
   const panel = root.querySelector('.dsh-nav-panel');

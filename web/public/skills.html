@@ -135,6 +135,9 @@
       .controls input { padding: 0 18px 0 53px; }
       .controls input::placeholder { color: color-mix(in srgb, var(--muted) 78%, transparent); }
       .controls input:focus { box-shadow: inset 0 0 0 2px var(--accent); }
+      .skill-state-action { min-height: 44px; padding: 10px 16px; border: 1px solid var(--line); color: var(--ink); background: var(--card); font: 600 13px/1.4 var(--sans); cursor: pointer; }
+      .skill-state-action:hover { background: var(--accent-soft); }
+      .skill-state-action:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
       .controls::before { position: absolute; width: 11px; height: 11px; top: 50%; left: 22px; border: 2px solid var(--accent); border-radius: 50%; content: ""; pointer-events: none; transform: translateY(-62%); }
       .controls::after { position: absolute; width: 7px; height: 2px; top: calc(50% + 5px); left: 33px; background: var(--accent); content: ""; pointer-events: none; transform: rotate(45deg); transform-origin: left center; }
       .status { min-height: 24px; margin: 12px 0 18px; color: var(--muted); font-size: 13px; font-weight: 500; line-height: 20px; font-variant-numeric: tabular-nums; letter-spacing: normal; }
@@ -525,6 +528,8 @@
       );
       let entries = [];
       let activeCategory = "";
+      let loadState = "loading";
+      let pendingLoad = null;
 
       function formatNumber(value) {
         return new Intl.NumberFormat("zh-CN").format(Number(value) || 0);
@@ -605,6 +610,7 @@
       }
 
       function render() {
+        if (loadState !== "ready") return;
         const query = normalizeSearchText(search.value);
         const categoryEntries = entries
           .filter((entry) => !activeCategory || categoriesOf(entry).includes(activeCategory));
@@ -702,17 +708,58 @@
           .filter((entry) => entry?.type === "skill" && entry.fullName?.toLowerCase() !== "dsheval/dsh-top100")
           .map((entry) => ({ ...entry, descriptionZh: descriptionFor(entry) }));
         updateCategoryControls();
-        render();
         renderDataFreshness(document.querySelector("#data-freshness"), snapshotMetadata);
+      }
+
+      function loadSkills() {
+        if (pendingLoad) return pendingLoad;
+        loadState = "loading";
+        grid.setAttribute("aria-busy", "true");
+        status.textContent = "正在读取 Skills 目录…";
+        updated.textContent = "更新于：加载中";
+        const loading = document.createElement("p");
+        loading.className = "empty";
+        loading.textContent = "正在加载 Skills…";
+        grid.replaceChildren(loading);
+        pendingLoad = load().then(() => {
+          loadState = "ready";
+          render();
+        }).catch((error) => {
+          loadState = "error";
+          console.error(error);
+          renderDataFreshness(document.querySelector("#data-freshness"), null);
+          status.textContent = "Skills 目录暂时无法读取，请稍后重试。";
+          updated.textContent = "更新于：暂时无法读取";
+          const empty = document.createElement("div");
+          empty.className = "empty";
+          const message = document.createElement("p");
+          message.textContent = "数据加载失败。";
+          const retry = document.createElement("button");
+          retry.type = "button";
+          retry.className = "skill-state-action";
+          retry.textContent = "重试加载";
+          retry.addEventListener("click", () => void loadSkills());
+          empty.append(message, retry);
+          grid.replaceChildren(empty);
+        }).finally(() => {
+          pendingLoad = null;
+          grid.removeAttribute("aria-busy");
+        });
+        return pendingLoad;
       }
 
       search.addEventListener("input", render);
       for (const [index, button] of categoryButtons.entries()) {
-        button.addEventListener("mouseenter", () => showCategoryDescription(button));
+        button.addEventListener("pointerenter", event => {
+          if (event.pointerType === "mouse") showCategoryDescription(button);
+        });
         button.addEventListener("mouseleave", hideCategoryDescription);
-        button.addEventListener("focus", () => showCategoryDescription(button));
+        button.addEventListener("focus", () => {
+          if (button.matches(":focus-visible")) showCategoryDescription(button);
+        });
         button.addEventListener("blur", hideCategoryDescription);
         button.addEventListener("click", () => {
+          hideCategoryDescription();
           activeCategory = button.dataset.category;
           updateCategoryControls();
           render();
@@ -724,15 +771,7 @@
           categoryButtons[(index + offset + categoryButtons.length) % categoryButtons.length].focus();
         });
       }
-      load().catch((error) => {
-        console.error(error);
-        renderDataFreshness(document.querySelector("#data-freshness"), null);
-        status.textContent = "Skills 目录暂时无法读取，请稍后重试。";
-        const empty = document.createElement("p");
-        empty.className = "empty";
-        empty.textContent = "数据加载失败。";
-        grid.replaceChildren(empty);
-      });
+      void loadSkills();
     </script>
   </body>
 </html>
